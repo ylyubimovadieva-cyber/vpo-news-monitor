@@ -1,0 +1,69 @@
+# Один процес кожні 10 хвилин: кнопки координаторки, публікація погодженого;
+# раз на 3 години – збір новин; о 9:00 за Києвом – щоденний підсумок.
+name: monitor
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # кожні 10 хвилин
+  workflow_dispatch: {}
+
+# Усі процеси працюють з однією базою – не запускаємо їх одночасно.
+concurrency:
+  group: vpo-state
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Безпечні значення за замовчуванням. Бойовий режим вмикається лише
+      # змінними репозиторію DRY_RUN=false і LIVE_CONFIRMED=true (див. README).
+      DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
+      LIVE_CONFIRMED: ${{ vars.LIVE_CONFIRMED || 'false' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      TELEGRAM_APPROVAL_BOT_TOKEN: ${{ secrets.TELEGRAM_APPROVAL_BOT_TOKEN }}
+      TELEGRAM_PUBLISH_BOT_TOKEN: ${{ secrets.TELEGRAM_PUBLISH_BOT_TOKEN }}
+      TELEGRAM_COORDINATOR_CHAT_ID: ${{ secrets.TELEGRAM_COORDINATOR_CHAT_ID }}
+      TELEGRAM_TEST_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_TEST_GROUP_CHAT_ID }}
+      FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
+      STATE_KEY: ${{ secrets.STATE_KEY }}
+      FACEBOOK_READ_TOKEN: ${{ secrets.FACEBOOK_READ_TOKEN }}
+    steps:
+      # Поки не внесено обов'язкові секрети, сервіс нічого не робить: так база
+      # ніколи не потрапить у публічний репозиторій незашифрованою.
+      - name: Перевірити налаштування
+        id: ready
+        run: |
+          missing=""
+          for name in STATE_KEY TELEGRAM_APPROVAL_BOT_TOKEN TELEGRAM_COORDINATOR_CHAT_ID; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::Сервіс ще не налаштовано. Додайте секрети:$missing (див. README)"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.ready.outputs.ok == 'true'
+        uses: actions/checkout@v4
+      - if: steps.ready.outputs.ok == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - if: steps.ready.outputs.ok == 'true'
+        run: pip install -r requirements.txt
+      - if: steps.ready.outputs.ok == 'true'
+        run: bash scripts/state.sh pull
+      - id: tick
+        if: steps.ready.outputs.ok == 'true'
+        run: python -m vpo_news tick
+      - name: Зберегти стан
+        if: always() && steps.ready.outputs.ok == 'true'
+        run: bash scripts/state.sh push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

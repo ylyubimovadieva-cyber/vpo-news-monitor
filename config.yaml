@@ -1,0 +1,396 @@
+# Конфігурація сервісу моніторингу новин «Конгрес ВПО України».
+# Тут НЕМАЄ і не має бути секретів (токенів, ключів). Секрети – лише у змінних
+# оточення або GitHub Secrets (див. README).
+
+# ---------------------------------------------------------------------------
+# П'ять стовпів. Назви (title) публікуються в першому рядку допису дослівно.
+# Ключі (DIM, HOLOS, ...) – службові, їх не змінюйте.
+# keywords – регулярні вирази без урахування регістру; використовуються як
+# підказка для класифікації і в офлайн-тестах.
+# ---------------------------------------------------------------------------
+pillars:
+  DIM:
+    title: "ДІМ – право на стабільність"
+    topic_name: "ДІМ"
+    about: "житло, компенсації за зруйноване житло, соціальне і доступне житло, житлові програми, місця тимчасового проживання"
+    keywords: ["житл", "компенсац\\w* за (зруйнован|пошкоджен)", "єВідновленн", "зруйнован\\w* (житл|будин|квартир)", "соціальн\\w* житл", "доступн\\w* житл", "оренд\\w* житл", "місц\\w* тимчасового проживання", "модульн", "гуртожит", "житлов\\w* сертифікат", "shelter", "housing"]
+  HOLOS:
+    title: "ГОЛОС – право на участь"
+    topic_name: "ГОЛОС"
+    about: "участь ВПО в ухваленні рішень, ради ВПО, консультації з громадськістю, виборчі права, представництво"
+    keywords: ["рад\\w* (з питань )?(ВПО|внутрішньо переміщених)", "консультац\\w* з громадськ", "громадськ\\w* обговоренн", "громадськ\\w* рад", "виборч", "голосуванн", "представництв", "участ\\w* (ВПО|переселенців) в ухваленн", "залученн\\w* (ВПО|переселенців)", "participation"]
+  TURBOTA:
+    title: "ТУРБОТА – право на турботу"
+    topic_name: "ТУРБОТА"
+    about: "соціальний захист, виплати ВПО, оцінювання потреб, медична і психологічна допомога, послуги для вразливих груп"
+    keywords: ["виплат", "допомог\\w* на проживання", "соціальн\\w* захист", "оцінюванн\\w* потреб", "медичн", "психолог", "реабілітац", "соціальн\\w* послуг", "вразлив", "інвалідніст", "пенсі", "Пенсійн\\w* фонд", "грошов\\w* допомог", "cash assistance", "protection"]
+  POVERNENNIA:
+    title: "ПОВЕРНЕННЯ – право на приналежність"
+    topic_name: "ПОВЕРНЕННЯ"
+    about: "повернення, реінтеграція, деокуповані території, інтеграція в приймаючих громадах, документи, зайнятість"
+    keywords: ["поверненн", "повертаю?т", "реінтеграц", "деокупован", "звільнен\\w* (територ|громад)", "інтеграц", "приймаюч\\w* громад", "\\bдокумент(?!уванн)", "паспорт", "працевлаштуванн", "зайнятіст", "робоч\\w* місц", "returnee", "integration"]
+  PAMIAT:
+    title: "ПАМ'ЯТЬ – право на правду"
+    topic_name: "ПАМ'ЯТЬ"
+    about: "документування злочинів і втрат, реєстр збитків, правосуддя, увічнення пам'яті, архіви свідчень"
+    keywords: ["документуванн", "воєнн\\w* злочин", "реєстр\\w* збитк", "Register of Damage", "компенсаційн\\w* комісі", "правосудд", "трибунал", "Міжнародн\\w* кримінальн", "увічненн", "пам['’]ят", "архів", "свідчен", "депортац"]
+  # Рубрика (не стовп): гранти, конкурси, програми і можливості для ВПО.
+  # Має власну тему в групі. Допис обов'язково містить дедлайн; без дедлайну
+  # або після нього не публікується.
+  MOZHLYVOSTI:
+    title: "МОЖЛИВОСТІ – гранти і програми для ВПО"
+    topic_name: "МОЖЛИВОСТІ"
+    about: "гранти, конкурси, стипендії, навчальні програми, програми працевлаштування і підтримки для ВПО та організацій, що з ними працюють; лише з чітким дедлайном"
+    keywords: ["грант", "конкурс\\w* (проєкт|грант|заяв|для)", "стипенді", "прийом заявок", "приймаю\\w* заявки", "подати заявку", "дедлайн", "навчальн\\w* програм", "call for (proposals|applications)", "funding opportunit", "\\bgrants?\\b"]
+
+# ---------------------------------------------------------------------------
+# Попередній відбір: новина йде на аналіз моделлю, лише якщо в заголовку або
+# тексті є хоча б один із цих виразів (ВПО або люди, постраждалі від війни).
+# ---------------------------------------------------------------------------
+relevance_keywords:
+  - "ВПО"
+  - "внутрішньо переміщ"
+  - "переселен"
+  - "вимушено переміщ"
+  - "евакуйован"
+  - "евакуац"
+  - "постраждал\\w* (від|внаслідок) (війни|збройної агресії|бойових дій|обстрілів)"
+  - "зруйнован\\w* (житл|будин|квартир)"
+  - "пошкоджен\\w* (житл|будин|квартир)"
+  - "єВідновленн"
+  - "деокупован"
+  - "окупован\\w* територ"
+  - "Реєстр\\w* збитк"
+  - "біженц"
+  - "\\bIDPs?\\b"
+  - "internally displaced"
+  - "displace"
+  - "returnee"
+  - "Register of Damage"
+  # гранти і можливості
+  - "грант\\w* для (ВПО|переселенц|громад|організац|ГО|жінок|молоді|ветеран)"
+  - "можливост\\w* для (ВПО|переселенц)"
+  - "конкурс\\w* (проєкт|грант|міні-грант)"
+  - "call for (proposals|applications)"
+
+# ---------------------------------------------------------------------------
+# Білий список. Новина з домену з primary_domains – першоджерело.
+# Новина з домену з media – медіа; для підтвердження потрібні два медіа
+# різних власників (owner). Субдомени враховуються автоматично
+# (наприклад, "gov.ua" охоплює kmu.gov.ua, сайти ОВА тощо).
+# Новини з доменів поза білим списком не приймаються взагалі.
+# ---------------------------------------------------------------------------
+whitelist:
+  primary_domains:
+    # органи влади (усі сайти в зоні gov.ua: Кабмін, Рада, міністерства, ПФУ,
+    # Омбудсман, обласні військові адміністрації)
+    - gov.ua
+    - zakon.rada.gov.ua
+    # міжнародні організації
+    - unhcr.org
+    - iom.int
+    - reliefweb.int
+    - unocha.org
+    - undp.org
+    - unesco.org
+    - coe.int
+    - irex.org
+    - acted.org
+    - globalprotectioncluster.org
+    - sheltercluster.org
+    - drc.ngo
+    - nrc.no
+    # партнери та організації платформи (список доповнюватиметься)
+    - irf.ua
+    - rokada.org.ua
+    - r2p.org.ua
+    - krymsos.com
+    - dostupoint.org.ua
+    - ldn.org.ua
+    - csdf.org.ua
+    - east-sos.org
+    - helsinki.org.ua
+    # грантодавці (власні конкурси) – для рубрики МОЖЛИВОСТІ
+    - ednannia.ua
+    - houseofeurope.org.ua
+    - ucf.in.ua
+  media:
+    - {domain: ukrinform.ua, owner: ukrinform}
+    - {domain: suspilne.media, owner: suspilne}
+    - {domain: radiosvoboda.org, owner: rferl}
+    - {domain: pravda.com.ua, owner: up}
+    - {domain: eurointegration.com.ua, owner: up}
+    - {domain: epravda.com.ua, owner: up}
+    - {domain: hromadske.ua, owner: hromadske}
+    - {domain: lb.ua, owner: lb}
+    - {domain: slovoidilo.ua, owner: slovoidilo}
+
+# Заборонені домени: відкидаються ще до перевірки, навіть якщо випадково
+# потрапили в білий список. Сюди ж – агрегатори і Telegram.
+blocked_domains:
+  - ru
+  - su
+  - рф
+  - by
+  - t.me
+  - telegram.me
+  - telegram.org
+  - news.google.com
+  - ukr.net
+  - meta.ua
+  - msn.com
+  - yahoo.com
+
+# Telegram заблоковано як джерело (анонімні канали заборонені). Виняток –
+# лише ОФІЦІЙНІ ІМЕННІ канали посадовців і установ з цього списку.
+# Додавайте канал, лише переконавшись, що на нього посилається офіційний сайт
+# або офіційна сторінка власника. kind: primary – допис каналу є першоджерелом.
+telegram_channels:
+  - {channel: dmytro_lubinetzs, name: "Дмитро Лубінець, Уповноважений ВРУ з прав людини", owner: ombudsman, kind: primary}
+  - {channel: frolovproparliament, name: "Павло Фролов, голова ТСК з питань захисту прав ВПО", owner: frolov, kind: primary}
+
+# Якщо в тексті новини є такі посилання на джерела, новина відкидається
+# (передрук російських матеріалів, анонімні канали).
+blocked_attribution_patterns:
+  - "ТАСС"
+  - "ТАРС"
+  - "РИА Новости"
+  - "РІА Новини"
+  - "Russia Today"
+  - "росЗМІ"
+  - "російськ\\w* (ЗМІ|пропагандистськ|медіа)"
+  - "анонімн\\w* (телеграм|Telegram)"
+
+# ---------------------------------------------------------------------------
+# Джерела для збору. Новини з них приймаються, лише якщо домен посилання є
+# в білому списку вище.
+#   type: rss  – стрічка RSS/Atom (url)
+#   type: html – сторінка зі списком новин (url) + link_regex для посилань
+#                на окремі новини; кожна новина завантажується окремо
+#   type: facebook – офіційна сторінка Facebook (page: ім'я або ID сторінки).
+#                Працює лише з токеном FACEBOOK_READ_TOKEN (див. README).
+#                kind: primary – допис сторінки вважається першоджерелом.
+#   type: telegram – офіційний іменний канал (channel: ім'я каналу); канал
+#                має бути в списку telegram_channels вище.
+# require_keywords – брати із загальної стрічки лише записи з цими словами
+# enabled: false – тимчасово вимкнути джерело
+# ---------------------------------------------------------------------------
+# Адреси сайтів перевірено 18–19.11.2026. Сторінки Facebook узято з посилань
+# на офіційних сайтах (сам Facebook автоматичну перевірку не пропускає).
+sources:
+  # --- медіа
+  - {name: "Укрінформ", type: rss, url: "https://www.ukrinform.ua/rss/block-lastnews"}
+  - {name: "Суспільне", type: rss, url: "https://suspilne.media/rss/all.rss"}
+  - {name: "Радіо Свобода", type: rss, url: "https://www.radiosvoboda.org/api/zrqiteuuir"}
+  - {name: "Українська правда", type: rss, url: "https://www.pravda.com.ua/rss/"}
+  - {name: "LB.ua", type: rss, url: "https://lb.ua/rss/ukr/news.xml"}
+  - {name: "Слово і діло", type: rss, url: "https://www.slovoidilo.ua/rss.xml"}
+  - {name: "Громадське", type: html, url: "https://hromadske.ua/news", link_regex: "https://hromadske\\.ua/[a-z-]+/\\d{5,}-[a-z0-9-]+"}
+  # --- органи влади
+  # Міністерство соціальної політики, сім'ї та єдності – тепер відповідає за ВПО
+  - {name: "Мінсоцполітики", type: html, url: "https://www.msp.gov.ua/press-center/news", link_regex: "/press-center/news/[a-z0-9-]+"}
+  - {name: "Пенсійний фонд", type: html, url: "https://www.pfu.gov.ua/", link_regex: "https://www\\.pfu\\.gov\\.ua/\\d{6,}-[a-z0-9-]+/"}
+  - {name: "Омбудсман", type: html, url: "https://ombudsman.gov.ua/news", link_regex: "https://ombudsman\\.gov\\.ua/news_details/[a-z0-9-]+"}
+  - {name: "Верховна Рада", type: html, url: "https://www.rada.gov.ua/news", link_regex: "/news/(Novyny|Top-novyna)/\\d+\\.html"}
+  # Кабмін: стрічка лежить у /api/, а robots.txt забороняє /api/, тому сервіс
+  # її пропустить. Залишено вимкненим, доки не з'явиться дозволений спосіб.
+  - {name: "Кабінет Міністрів", type: rss, url: "https://www.kmu.gov.ua/api/rss", enabled: false}
+  # Мінвідновлення: robots.txt забороняє доступ ботам ШІ – з поваги вимкнено.
+  - {name: "Мінвідновлення", type: html, url: "https://mininfra.gov.ua/", link_regex: "/news/[a-z0-9-]+", enabled: false}
+  # --- обласні військові адміністрації і Представництво Президента в АР Крим
+  # (перевірено 19.11.2026; на багатьох сайтах ОВА немає RSS, тож береться
+  # список новин із головної сторінки)
+  - {name: "Донецька ОВА", type: html, url: "https://dn.gov.ua/", link_regex: "dn\\.gov\\.ua/news/[a-z0-9-]{20,}"}
+  - {name: "Запорізька ОВА", type: html, url: "https://www.zoda.gov.ua/", link_regex: "zoda\\.gov\\.ua/news/\\d+/[a-z0-9-]+\\.html"}
+  - {name: "Херсонська ОВА", type: html, url: "https://khoda.gov.ua/", link_regex: "khoda\\.gov\\.ua/news/[a-z0-9-]{20,}"}
+  - {name: "Харківська ОВА", type: html, url: "https://kharkivoda.gov.ua/news", link_regex: "kharkivoda\\.gov\\.ua/news/\\d+"}
+  - {name: "Представництво Президента в АР Крим", type: rss, url: "https://ppu.gov.ua/press-center/feed/"}
+  - {name: "Київська ОВА", type: rss, url: "https://koda.gov.ua/feed/"}
+  - {name: "Вінницька ОВА", type: rss, url: "https://vin.gov.ua/?format=feed&type=rss"}
+  - {name: "Житомирська ОВА", type: rss, url: "https://oda.zht.gov.ua/feed/"}
+  - {name: "Хмельницька ОВА", type: rss, url: "https://www.adm-km.gov.ua/?feed=rss2"}
+  - {name: "Закарпатська ОВА", type: html, url: "https://carpathia.gov.ua/ua/news", link_regex: "/ua/news/news-\\d+"}
+  - {name: "Івано-Франківська ОВА", type: html, url: "https://www.if.gov.ua/", link_regex: "if\\.gov\\.ua/news/[a-z0-9-]{20,}"}
+  - {name: "Одеська ОВА", type: html, url: "https://oda.od.gov.ua/ua/news", link_regex: "/ua/news/[a-z0-9-]{15,}"}
+  - {name: "Полтавська ОВА", type: html, url: "https://poda.gov.ua/", link_regex: "poda\\.gov\\.ua/news/\\d+"}
+  - {name: "Рівненська ОВА", type: html, url: "https://www.rv.gov.ua/", link_regex: "rv\\.gov\\.ua/news/[a-z0-9-]{20,}"}
+  - {name: "Тернопільська ОВА", type: html, url: "https://oda.te.gov.ua/", link_regex: "oda\\.te\\.gov\\.ua/news/[a-z0-9-]{20,}"}
+  - {name: "Чернівецька ОВА", type: html, url: "https://bukoda.gov.ua/", link_regex: "bukoda\\.gov\\.ua/news/[a-z0-9-]{20,}"}
+  # Сайти Луганської, Сумської, Чернігівської, Кіровоградської, Львівської,
+  # Черкаської ОВА і КМВА відмовляють автоматичним запитам (403), сайт
+  # Дніпропетровської ОВА не відповідає, а Миколаївська ОВА забороняє збір у
+  # robots.txt. Волинська – новини на сайті виглядають застарілими.
+  # Для них – сторінки Facebook нижче (потрібен FACEBOOK_READ_TOKEN).
+  # --- міжнародні організації (через ReliefWeb: сайти UNHCR та IOM блокують автоматичні запити)
+  - {name: "ReliefWeb – Україна, житло і захист", type: rss, url: "https://reliefweb.int/updates/rss.xml?advanced-search=%28PC241%29_%28T4603.T4600%29"}
+  - {name: "ReliefWeb – Україна, переміщення", type: rss, url: "https://reliefweb.int/updates/rss.xml?search=displacement%20OR%20IDP%20OR%20%22internally%20displaced%22&advanced-search=%28PC241%29"}
+  - {name: "ReliefWeb – UNHCR Україна", type: rss, url: "https://reliefweb.int/updates/rss.xml?advanced-search=%28PC241%29_%28S2868%29"}
+  - {name: "ReliefWeb – IOM Україна", type: rss, url: "https://reliefweb.int/updates/rss.xml?advanced-search=%28PC241%29_%28S1255%29"}
+  - {name: "ReliefWeb – OCHA Україна", type: rss, url: "https://reliefweb.int/updates/rss.xml?advanced-search=%28PC241%29_%28S1503%29"}
+  - {name: "ReliefWeb – ЮНЕСКО Україна", type: rss, url: "https://reliefweb.int/updates/rss.xml?advanced-search=%28PC241%29_%28S1820%29"}
+  # Сайти UNHCR, ПРООН і Ради Європи відмовляють автоматичним запитам (403),
+  # тому UNHCR – через ReliefWeb, а ПРООН і Рада Європи – лише через Facebook нижче.
+  - {name: "ACTED", type: rss, url: "https://www.acted.org/en/feed/", require_keywords: ["Ukrain", "Україн"]}
+  - {name: "IREX Україна", type: html, url: "https://www.irex.org/region/europe-eurasia/ukraine", link_regex: "/(news|success-story|insight)/[a-z0-9-]+"}
+  - {name: "NRC Україна", type: html, url: "https://www.nrc.no/countries/europe/ukraine", link_regex: "/news/20\\d{2}/[a-z0-9-]+"}
+  - {name: "DRC Україна", type: html, url: "https://drc.ngo/our-work/where-we-work/europe/ukraine/", link_regex: "/en/news/ukraine-[a-z0-9-]+/"}
+  # --- партнери та організації платформи
+  - {name: "МФ «Відродження»", type: html, url: "https://www.irf.ua/news/?category=novyny", link_regex: "https://www\\.irf\\.ua/(?!news|en/|financial-policy)[a-z0-9-]{25,}/"}
+  - {name: "БФ «Рокада»", type: rss, url: "https://rokada.org.ua/feed/"}
+  - {name: "БФ «Право на захист»", type: html, url: "https://r2p.org.ua/novyny", link_regex: "https://r2p\\.org\\.ua/page/[a-z0-9-]+"}
+  - {name: "ГО «Крим SOS»", type: rss, url: "https://krymsos.com/feed/"}
+  - {name: "ГО «Точка доступу»", type: rss, url: "https://dostupoint.org.ua/feed/"}
+  - {name: "ГС «Мережа правового розвитку»", type: rss, url: "https://ldn.org.ua/feed/"}   # стрічка давно не оновлювалася
+  - {name: "ГО «Форум розвитку громадянського суспільства»", type: html, url: "https://csdf.org.ua/news/index-ua.html", link_regex: "/news/\\d{6}-[a-z0-9-]+-ua\\.html"}
+  - {name: "«Схід SOS»", type: html, url: "https://east-sos.org/publications/?publication-types=news", link_regex: "https://east-sos\\.org/publications/[a-z0-9-]+/"}
+  - {name: "УГСПЛ", type: rss, url: "https://www.helsinki.org.ua/feed/"}
+  # ГО «Вестед» і ГО «Сталий розвиток держави»: офіційних сайтів не знайдено –
+  # додайте адреси, коли вони будуть відомі.
+  # --- гранти і можливості (лише грантодавці з власними конкурсами; агрегатори
+  # на кшталт ГУРТ чи Громадського простору не підходять: вони передруковують
+  # чужі оголошення, а допис має посилатися на першоджерело)
+  - {name: "ІСАР «Єднання»", type: rss, url: "https://ednannia.ua/?format=feed&type=rss"}
+  - {name: "Дім Європи", type: html, url: "https://houseofeurope.org.ua/opportunities", link_regex: "/opportunity/\\d+"}
+  - {name: "Український культурний фонд", type: html, url: "https://ucf.in.ua/news", link_regex: "https://ucf\\.in\\.ua/news/[a-z0-9-]+"}
+
+  # --- офіційні іменні Telegram-канали (лише зі списку telegram_channels;
+  # читається публічна вебсторінка каналу t.me/s/<канал>)
+  - {name: "Дмитро Лубінець (Telegram)", type: telegram, channel: dmytro_lubinetzs}
+  - {name: "Павло Фролов (Telegram)", type: telegram, channel: frolovproparliament}
+
+  # --- офіційні сторінки Facebook (працюють лише з FACEBOOK_READ_TOKEN)
+  # Graph API читає лише СТОРІНКИ, а не особисті профілі: якщо сторінка
+  # виявиться профілем, у журналі буде помилка і її варто вимкнути.
+  # ОВА (сторінки з посилань на сайтах ОВА)
+  - {name: "Донецька ОВА, пресслужба (Facebook)", type: facebook, page: "668726333148414", kind: primary}
+  - {name: "Запорізька ОВА (Facebook)", type: facebook, page: "zoda.gov.ua", kind: primary}
+  - {name: "Херсонська ОВА (Facebook)", type: facebook, page: "khoda.gov.ua", kind: primary}
+  - {name: "Харківська ОВА (Facebook)", type: facebook, page: "kharkivoda.gov.ua", kind: primary}
+  - {name: "Миколаївська ОВА (Facebook)", type: facebook, page: "mykoda", kind: primary}
+  - {name: "Представництво Президента в АР Крим (Facebook)", type: facebook, page: "ppu.gov.ua", kind: primary}
+  - {name: "Київська ОВА (Facebook)", type: facebook, page: "koda.gov.ua", kind: primary}
+  - {name: "Житомирська ОВА (Facebook)", type: facebook, page: "odazt", kind: primary}
+  - {name: "Закарпатська ОВА (Facebook)", type: facebook, page: "odazakarpattya", kind: primary}
+  - {name: "Одеська ОВА (Facebook)", type: facebook, page: "oda.odesa", kind: primary}
+  - {name: "Полтавська ОВА (Facebook)", type: facebook, page: "poltavaoda", kind: primary}
+  - {name: "Рівненська ОВА (Facebook)", type: facebook, page: "RivneODA", kind: primary}
+  - {name: "Тернопільська ОВА (Facebook)", type: facebook, page: "oda.te.gov.ua", kind: primary}
+  - {name: "Хмельницька ОВА (Facebook)", type: facebook, page: "723568674430816", kind: primary}
+  - {name: "Чернівецька ОВА (Facebook)", type: facebook, page: "CVoda", kind: primary}
+  - {name: "Волинська ОВА (Facebook)", type: facebook, page: "voladm.gov.ua", kind: primary}
+  # Сторінки цих ОВА не вдалося підтвердити автоматично (сайти закриті) –
+  # впишіть ім'я сторінки з адреси facebook.com/... і приберіть enabled: false
+  - {name: "Луганська ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Сумська ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Чернігівська ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Дніпропетровська ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Кіровоградська ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Львівська ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Черкаська ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Київська міська ВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Івано-Франківська ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "Вінницька ОВА (Facebook)", type: facebook, page: "", kind: primary, enabled: false}   # на сайті є лише сторінка департаменту
+  # Державні установи і посадовці
+  - {name: "Укрдержархів (Facebook)", type: facebook, page: "399606883730717", kind: primary}   # сайт archives.gov.ua забороняє автоматичний доступ
+  - {name: "Офіс Омбудсмана (Facebook)", type: facebook, page: "office.ombudsman.ua", kind: primary}
+  - {name: "Дмитро Лубінець (Facebook)", type: facebook, page: "dmytro.lubinets", kind: primary, owner: "ombudsman"}
+  - {name: "Павло Фролов, голова ТСК з питань ВПО (Facebook)", type: facebook, page: "pavlo.frolov.5", kind: primary}
+  # Максим Ткаченко: офіційну сторінку не підтверджено – впишіть її ім'я з адреси facebook.com/... і приберіть enabled: false
+  - {name: "Максим Ткаченко (Facebook)", type: facebook, page: "", kind: primary, enabled: false}
+  - {name: "ПРООН Україна (Facebook)", type: facebook, page: "", kind: primary, enabled: false}   # впишіть ім'я сторінки
+  - {name: "Рада Європи в Україні (Facebook)", type: facebook, page: "", kind: primary, enabled: false}   # впишіть ім'я сторінки
+  - {name: "БФ «Рокада» (Facebook)", type: facebook, page: "cfrokada", kind: primary}
+  - {name: "БФ «Право на захист» (Facebook)", type: facebook, page: "right2protection", kind: primary}
+  - {name: "ГО «Крим SOS» (Facebook)", type: facebook, page: "KRYM.SOS", kind: primary}
+  - {name: "ГО «Точка доступу» (Facebook)", type: facebook, page: "dostupoint", kind: primary}
+  - {name: "ГС «Мережа правового розвитку» (Facebook)", type: facebook, page: "legaldnetwork", kind: primary}
+  - {name: "«Схід SOS» (Facebook)", type: facebook, page: "east.sos.ua", kind: primary}
+  - {name: "УГСПЛ (Facebook)", type: facebook, page: "Ugspl", kind: primary}
+  - {name: "IREX в Україні (Facebook)", type: facebook, page: "irexinukraine", kind: primary}
+  - {name: "Український культурний фонд (Facebook)", type: facebook, page: "ucf.ua", kind: primary}
+
+# ---------------------------------------------------------------------------
+# Збір
+# ---------------------------------------------------------------------------
+collector:
+  max_age_hours: 72            # новини, старші за це, не публікуються
+  request_delay_seconds: 3     # пауза між запитами до одного сайту
+  max_items_per_source: 30
+  fetch_article_text: true     # завантажувати повний текст новини
+  timeout_seconds: 20
+  user_agent: "vpo-news-monitor/1.0 (non-commercial news monitoring)"
+
+# Порівняння новин (дублікати і пошук «тієї самої події» в різних медіа)
+dedupe:
+  cluster_threshold: 0.25      # схожість (0–1), з якої новини вважаються кандидатами на одну подію
+  duplicate_threshold: 0.85    # майже ідентичні заголовки
+
+# ---------------------------------------------------------------------------
+# Модель Claude
+# ---------------------------------------------------------------------------
+llm:
+  model: "claude-sonnet-5-5"
+  effort: "medium"
+  max_tokens: 8000
+  min_confidence: 0.7          # нижче – у щоденний звіт «сумнівні»
+  server_fallbacks: true       # якщо модель відмовить, API повторить запит на рекомендованій резервній моделі
+  max_attempts_per_cluster: 3
+
+# ---------------------------------------------------------------------------
+# Правила тексту допису
+# ---------------------------------------------------------------------------
+text_rules:
+  min_length: 400
+  max_length: 700
+  source_prefix: "Джерело: "
+  # Оцінні слова: дозволені, лише якщо є в тексті першоджерела
+  evaluative_words: ["нарешті", "ганебн", "шокуюч", "сенсаційн", "неймовірн", "жахлив", "скандальн", "довгоочікуван", "безпрецедентн", "катастрофічн"]
+  # Канцеляризми: не блокують, але показуються координаторці як попередження
+  bureaucratese: ["здійснюва", "з метою", "у разі", "даний ", "вищезазначен", "на сьогоднішній день", "в рамках", "у рамках", "проведено роботу", "являється", "являє собою"]
+
+# ---------------------------------------------------------------------------
+# Погодження і публікація
+# ---------------------------------------------------------------------------
+approval:
+  expire_hours: 48
+
+telegram:
+  # chat_id приватного чату координаторки (число). Можна перекрити змінною
+  # TELEGRAM_COORDINATOR_CHAT_ID. Як дізнатися – див. README.
+  coordinator_chat_id: 0
+  # Група «Національна платформа» (@idpcongressua)
+  group_username: "@idpcongressua"
+  group_chat_id: 0             # заповнити після scripts/get_topic_ids.py (від'ємне число на кшталт -100...)
+  topics:                      # message_thread_id тем групи
+    DIM: 0
+    HOLOS: 0
+    TURBOTA: 0
+    POVERNENNIA: 0
+    PAMIAT: 0
+    MOZHLYVOSTI: 0               # тему «МОЖЛИВОСТІ» треба створити в групі
+  # Теми тестової групи (необов'язково). Якщо 0 – у тестову групу без теми.
+  test_topics:
+    DIM: 0
+    HOLOS: 0
+    TURBOTA: 0
+    POVERNENNIA: 0
+    PAMIAT: 0
+    MOZHLYVOSTI: 0               # тему «МОЖЛИВОСТІ» треба створити в групі
+  daily_limit_per_topic: 3
+
+facebook:
+  enabled: true                # false – кнопка Facebook зникає, на Facebook нічого не йде
+  page_name: "Конгрес ВПО України"
+  page_id: ""                  # ID сторінки (не секрет); токен – у FACEBOOK_PAGE_TOKEN
+  graph_api_version: "v23.0"
+  daily_limit: 2
+
+schedule:
+  collect_every_hours: 3       # як часто збирати новини (процес запускається кожні 10 хв)
+
+digest:
+  hour_kyiv: 9
+
+storage:
+  keep_items_days: 30
+  keep_drafts_days: 120

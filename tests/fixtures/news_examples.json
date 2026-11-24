@@ -1,0 +1,153 @@
+{
+  "_note": "СИНТЕТИЧНІ ПРИКЛАДИ ДЛЯ ТЕСТІВ. Це не справжні новини: події, цифри й адреси сторінок вигадані для перевірки логіки. Не публікувати.",
+  "examples": [
+    {
+      "id": "f01", "expected": {"relevant": true, "pillar": "DIM", "verified": true},
+      "items": [{"source_name": "Кабінет Міністрів", "url": "https://www.kmu.gov.ua/news/test-yevidnovlennia-rozshyreno", "hours_ago": 6,
+        "title": "Уряд розширив програму єВідновлення для власників зруйнованого житла на деокупованих територіях",
+        "body": "Кабінет Міністрів ухвалив зміни до програми єВідновлення. Відтепер компенсацію за зруйноване житло зможуть отримати власники квартир і будинків у громадах, які були під окупацією. Заяву можна подати через Дію або в ЦНАП. Житловий сертифікат видається на придбання нового житла, зокрема в іншій громаді. Рішення стосується також внутрішньо переміщених осіб, чиє житло зруйноване."}]
+    },
+    {
+      "id": "f02", "expected": {"relevant": true, "pillar": "DIM", "verified": true},
+      "items": [
+        {"source_name": "Суспільне", "url": "https://suspilne.media/test/1001-u-dnipri-vidkryly-mistsia-tymchasovoho-prozhyvannia", "hours_ago": 10,
+         "title": "У Дніпрі відкрили нові місця тимчасового проживання для переселенців",
+         "body": "У Дніпрі після ремонту відкрили гуртожиток на 120 місць тимчасового проживання для внутрішньо переміщених осіб. Першочергово житло надаватимуть родинам з дітьми та людям з інвалідністю. Подати заявку можна в управлінні соціального захисту."},
+        {"source_name": "Укрінформ", "url": "https://www.ukrinform.ua/test/rubric-regions/1002-dnipro-hurtozhytok-vpo", "hours_ago": 9,
+         "title": "Дніпро: для ВПО облаштували гуртожиток на 120 місць тимчасового проживання",
+         "body": "У Дніпрі для переселенців облаштували гуртожиток – місця тимчасового проживання розраховані на 120 людей. Житло отримають насамперед сім'ї з дітьми та люди з інвалідністю."}]
+    },
+    {
+      "id": "f03", "expected": {"relevant": true, "pillar": "DIM", "verified": true},
+      "items": [{"source_name": "ReliefWeb", "url": "https://reliefweb.int/report/ukraine/test-iom-shelter-repairs-kharkiv", "hours_ago": 20,
+        "title": "IOM completes shelter repairs for displaced families in Kharkiv oblast",
+        "body": "The International Organization for Migration (IOM) has completed repairs of damaged housing for 400 families in Kharkiv oblast, including internally displaced people who returned home. The shelter programme covers roofs, windows and insulation before winter. Collective sites for IDPs also received heating equipment."}]
+    },
+    {
+      "id": "f04", "expected": {"relevant": true, "pillar": "HOLOS", "verified": true},
+      "items": [{"source_name": "Дніпропетровська ОВА", "url": "https://adm.dp.gov.ua/news/test-rada-vpo-zasidannia", "hours_ago": 8,
+        "title": "Рада з питань ВПО при ОВА провела консультації з громадськістю щодо програми підтримки переселенців",
+        "body": "Рада з питань внутрішньо переміщених осіб при обласній військовій адміністрації провела консультації з громадськістю. Представники ВПО внесли пропозиції до обласної програми підтримки. Наступне засідання ради відбудеться в грудні, участь у громадському обговоренні можуть взяти всі охочі."}]
+    },
+    {
+      "id": "f05", "expected": {"relevant": true, "pillar": "HOLOS", "verified": true},
+      "items": [{"source_name": "Верховна Рада", "url": "https://www.rada.gov.ua/news/Novyny/test-262001.html", "hours_ago": 30,
+        "title": "Комітет підтримав законопроєкт про виборчі права внутрішньо переміщених осіб",
+        "body": "Профільний комітет рекомендував парламенту ухвалити в першому читанні законопроєкт, який спрощує зміну виборчої адреси для внутрішньо переміщених осіб. Документ має забезпечити ВПО можливість голосування на місцевих виборах за місцем фактичного проживання та представництво в радах громад."}]
+    },
+    {
+      "id": "f06", "expected": {"relevant": true, "pillar": "HOLOS", "verified": true},
+      "items": [
+        {"source_name": "Громадське", "url": "https://hromadske.ua/suspilstvo/2001001-test-rady-vpo-hromady", "hours_ago": 14,
+         "title": "У громадах Київщини створили 12 рад ВПО: як переселенці впливають на рішення",
+         "body": "За пів року в громадах Київщини запрацювали 12 рад з питань ВПО. Переселенці беруть участь у консультаціях з місцевою владою, обговорюють бюджети і програми підтримки. Представництво ВПО в радах закріплене положеннями."},
+        {"source_name": "LB.ua", "url": "https://lb.ua/society/test/2001002-rady-vpo-kyivshchyna", "hours_ago": 12,
+         "title": "На Київщині діють 12 рад ВПО – переселенці долучаються до ухвалення рішень",
+         "body": "На Київщині працюють 12 рад з питань ВПО. Через них переселенці беруть участь в ухваленні рішень громад, зокрема в громадському обговоренні програм підтримки."}]
+    },
+    {
+      "id": "f07", "expected": {"relevant": true, "pillar": "TURBOTA", "verified": true},
+      "items": [{"source_name": "Пенсійний фонд", "url": "https://www.pfu.gov.ua/2300001-test-vyplata-dopomohy-na-prozhyvannia/", "hours_ago": 5,
+        "title": "ПФУ: виплата допомоги на проживання ВПО за листопад розпочнеться 20 числа",
+        "body": "Пенсійний фонд України повідомляє, що виплата допомоги на проживання внутрішньо переміщеним особам за листопад розпочнеться 20 листопада. Виплати отримають особи, яким допомогу продовжено після оцінювання потреб. Грошову допомогу зараховують на рахунки в банках."}]
+    },
+    {
+      "id": "f08", "expected": {"relevant": true, "pillar": "TURBOTA", "verified": true},
+      "items": [{"source_name": "Мінсоцполітики", "url": "https://www.msp.gov.ua/press-center/news/test-otsiniuvannia-potreb-vpo", "hours_ago": 18,
+        "title": "Мінсоцполітики запроваджує оцінювання потреб ВПО для призначення соціальних послуг",
+        "body": "Міністерство соціальної політики запускає оновлене оцінювання потреб внутрішньо переміщених осіб. Фахівці соціального захисту визначатимуть, яких соціальних послуг потребує родина: догляду, психологічної підтримки, допомоги людям з інвалідністю. Вразливі групи отримають послуги першочергово."}]
+    },
+    {
+      "id": "f09", "expected": {"relevant": true, "pillar": "TURBOTA", "verified": true},
+      "items": [{"source_name": "Омбудсман", "url": "https://ombudsman.gov.ua/news_details/test-psykholohichna-dopomoha-pereselentsiam", "hours_ago": 26,
+        "title": "Омбудсман: переселенці похилого віку мають проблеми з доступом до медичної і психологічної допомоги",
+        "body": "Уповноважений Верховної Ради з прав людини оприлюднив результати моніторингу місць компактного проживання ВПО. Переселенці похилого віку часто не мають доступу до медичної допомоги та психологічної підтримки. Омбудсман рекомендує місцевій владі забезпечити виїзні медичні бригади й соціальні послуги для вразливих груп."}]
+    },
+    {
+      "id": "f10", "expected": {"relevant": true, "pillar": "POVERNENNIA", "verified": true},
+      "items": [{"source_name": "Кабінет Міністрів", "url": "https://www.kmu.gov.ua/news/test-pratsevlashtuvannia-vpo-hromady", "hours_ago": 16,
+        "title": "Уряд компенсуватиме роботодавцям витрати на працевлаштування ВПО в приймаючих громадах",
+        "body": "Кабінет Міністрів ухвалив рішення про компенсацію роботодавцям частини витрат на оплату праці за працевлаштування внутрішньо переміщених осіб. Програма спрямована на зайнятість та інтеграцію переселенців у приймаючих громадах. Створені робочі місця мають зберігатися щонайменше рік."}]
+    },
+    {
+      "id": "f11", "expected": {"relevant": true, "pillar": "POVERNENNIA", "verified": true},
+      "items": [
+        {"source_name": "Радіо Свобода", "url": "https://www.radiosvoboda.org/a/test-povernennia-balakliia/3300001.html", "hours_ago": 22,
+         "title": "До деокупованої Балаклії повернулися понад дві тисячі мешканців: що з документами і роботою",
+         "body": "За рік до деокупованої Балаклії повернулися понад дві тисячі людей. Повернення ускладнює брак робочих місць і житла. У громаді відкрили центр, де допомагають відновити документи, отримати паспорт і зареєструватися в службі зайнятості."},
+        {"source_name": "Суспільне", "url": "https://suspilne.media/test/3300002-balakliia-povernennia-meshkantsiv", "hours_ago": 20,
+         "title": "У Балаклію повернулися понад 2 тисячі мешканців – громада відкрила центр реінтеграції",
+         "body": "У Балаклії, яку звільнили від окупації, запрацював центр реінтеграції. Тут допомагають відновити документи і знайти роботу людям, які повертаються додому."}]
+    },
+    {
+      "id": "f12", "expected": {"relevant": true, "pillar": "POVERNENNIA", "verified": true},
+      "items": [{"source_name": "ReliefWeb", "url": "https://reliefweb.int/report/ukraine/test-unhcr-intentions-survey-return", "hours_ago": 40,
+        "title": "UNHCR survey: most internally displaced Ukrainians hope to return, integration support remains key",
+        "body": "A new UNHCR intentions survey shows that most internally displaced people in Ukraine hope to return home one day, while many plan to stay in host communities for now. Access to employment, documentation and housing are the main factors for integration and return."}]
+    },
+    {
+      "id": "f13", "expected": {"relevant": true, "pillar": "PAMIAT", "verified": true},
+      "items": [{"source_name": "Мінʼюст", "url": "https://minjust.gov.ua/news/test-reiestr-zbytkiv-nova-katehoriia", "hours_ago": 12,
+        "title": "Реєстр збитків почав приймати заяви про втрату житла від внутрішньо переміщених осіб",
+        "body": "Міжнародний Реєстр збитків, завданих агресією Російської Федерації проти України, відкрив нову категорію заяв. Внутрішньо переміщені особи можуть задокументувати втрату житла через Дію. Реєстр збитків стане основою для майбутньої компенсаційної комісії і правосуддя для постраждалих."}]
+    },
+    {
+      "id": "f14", "expected": {"relevant": true, "pillar": "PAMIAT", "verified": true},
+      "items": [
+        {"source_name": "Українська правда", "url": "https://www.pravda.com.ua/news/test/4400001/", "hours_ago": 15,
+         "title": "Прокурори задокументували депортацію мешканців окупованих сіл: справу передадуть до суду",
+         "body": "Прокурори завершили документування воєнних злочинів щодо примусової депортації мешканців окупованих сіл. Зібрано свідчення понад ста переселенців. Матеріали передадуть до суду, частину – до Міжнародного кримінального суду."},
+        {"source_name": "Укрінформ", "url": "https://www.ukrinform.ua/test/rubric-ato/4400002-deportatsiia-svidchennia", "hours_ago": 14,
+         "title": "Свідчення переселенців допомогли задокументувати депортацію з окупованих сіл",
+         "body": "Свідчення внутрішньо переміщених осіб стали основою для документування депортації мешканців окупованих сіл. Справу про воєнні злочини скерують до суду."}]
+    },
+    {
+      "id": "f15", "expected": {"relevant": true, "pillar": "PAMIAT", "verified": true},
+      "items": [{"source_name": "МФ «Відродження»", "url": "https://www.irf.ua/test-konkurs-arkhivy-svidchen-pereselentsiv-viyna/", "hours_ago": 28,
+        "title": "Фонд «Відродження» оголосив конкурс на створення архівів свідчень переселенців про війну",
+        "body": "Міжнародний фонд «Відродження» оголосив конкурс для громадських організацій, які збирають і зберігають свідчення внутрішньо переміщених осіб про війну. Проєкти мають сприяти увічненню пам'яті та документуванню втрат. Заявки приймаються до кінця місяця."}]
+    },
+    {
+      "id": "f21", "expected": {"relevant": true, "pillar": "MOZHLYVOSTI", "verified": true, "deadline": "2027-09-30"},
+      "items": [{"source_name": "МФ «Відродження»", "url": "https://www.irf.ua/test-grantovyi-konkurs-dlia-orhanizatsii-vpo-2027/", "hours_ago": 7,
+        "title": "Грантовий конкурс для громадських організацій, що працюють з ВПО: прийом заявок до 30 вересня 2027 року",
+        "body": "Міжнародний фонд «Відродження» оголошує грантовий конкурс для громадських організацій, які надають послуги внутрішньо переміщеним особам. Можна отримати грант до 500 тисяч гривень на проєкт тривалістю до року. Подати заявку можна через онлайн-форму на сайті фонду. Прийом заявок триває до 30 вересня 2027 року включно. Дедлайн не продовжуватиметься."}]
+    },
+    {
+      "id": "f22", "expected": {"relevant": true, "pillar": "MOZHLYVOSTI", "verified": true, "deadline": "2026-03-01", "deadline_passed": true},
+      "items": [{"source_name": "ПРООН", "url": "https://www.undp.org/uk/ukraine/test-stypendii-dlia-vpo-2026", "hours_ago": 9,
+        "title": "ПРООН: стипендії на навчальну програму для ВПО, прийом заявок до 1 березня 2026 року",
+        "body": "Програма розвитку ООН відкриває прийом заявок на стипендії для внутрішньо переміщених осіб на навчальну програму з цифрових навичок. Подати заявку можна до 1 березня 2026 року. Стипендія покриває навчання і менторство."}]
+    },
+    {
+      "id": "f16", "expected": {"relevant": false, "pillar": null, "verified": true, "prefilter": false},
+      "items": [{"source_name": "Укрінформ", "url": "https://www.ukrinform.ua/test/rubric-sports/5500001-futbol", "hours_ago": 3,
+        "title": "Збірна України з футболу зіграє товариський матч у березні",
+        "body": "Збірна України з футболу проведе товариський матч у березні. Тренерський штаб оголосить склад за два тижні до гри."}]
+    },
+    {
+      "id": "f17", "expected": {"relevant": true, "pillar": "TURBOTA", "verified": false},
+      "items": [{"source_name": "LB.ua", "url": "https://lb.ua/society/test/5500002-mozhlyvo-skorotiat-vyplaty", "hours_ago": 4,
+        "title": "Виплати ВПО можуть скоротити з нового року – джерела",
+        "body": "За словами джерел, уряд розглядає можливість скоротити виплати внутрішньо переміщеним особам з нового року. Офіційного рішення поки немає."}]
+    },
+    {
+      "id": "f18", "expected": {"relevant": false, "pillar": null, "verified": false, "blocked": true},
+      "items": [{"source_name": "Заборонене джерело", "url": "https://ria.ru/test/vynuzhdennye-pereselentsy", "hours_ago": 2,
+        "title": "Переселенці (тестовий приклад із забороненого домену)",
+        "body": "Тестовий приклад: новина з російського домену про переселенців має бути відкинута до будь-якої обробки."}]
+    },
+    {
+      "id": "f19", "expected": {"relevant": false, "pillar": null, "verified": false, "blocked": true},
+      "items": [{"source_name": "Анонімний канал", "url": "https://t.me/test_channel/123", "hours_ago": 1,
+        "title": "ВПО: тестовий приклад з Telegram-каналу",
+        "body": "Тестовий приклад: анонімні Telegram-канали не можуть бути джерелом."}]
+    },
+    {
+      "id": "f20", "expected": {"relevant": true, "pillar": "DIM", "verified": false, "too_old": true},
+      "items": [{"source_name": "Кабінет Міністрів", "url": "https://www.kmu.gov.ua/news/test-stara-novyna-zhytlo", "hours_ago": 100,
+        "title": "Уряд виділив кошти на житло для ВПО (стара новина)",
+        "body": "Тестовий приклад: новина про житло для внутрішньо переміщених осіб, старша за 72 години, не має публікуватися."}]
+    }
+  ]
+}
