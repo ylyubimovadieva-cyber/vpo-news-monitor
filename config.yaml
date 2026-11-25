@@ -360,22 +360,23 @@ telegram:
   coordinator_chat_id: 0
   # Група «Національна платформа» (@idpcongressua)
   group_username: "@idpcongressua"
-  group_chat_id: 0             # заповнити після scripts/get_topic_ids.py (від'ємне число на кшталт -100...)
+  group_chat_id: -1004495061593
   topics:                      # message_thread_id тем групи
-    DIM: 0
-    HOLOS: 0
-    TURBOTA: 0
-    POVERNENNIA: 0
-    PAMIAT: 0
-    MOZHLYVOSTI: 0               # тему «МОЖЛИВОСТІ» треба створити в групі
-  # Теми тестової групи (необов'язково). Якщо 0 – у тестову групу без теми.
+    DIM: 2
+    HOLOS: 3
+    TURBOTA: 4
+    POVERNENNIA: 5
+    PAMIAT: 6
+    MOZHLYVOSTI: 45
+  # Теми тестової групи «Конгрес ВПО – тест» (її chat_id – у секреті
+  # TELEGRAM_TEST_GROUP_CHAT_ID). Якщо 0 – у тестову групу без теми.
   test_topics:
-    DIM: 0
-    HOLOS: 0
-    TURBOTA: 0
-    POVERNENNIA: 0
-    PAMIAT: 0
-    MOZHLYVOSTI: 0               # тему «МОЖЛИВОСТІ» треба створити в групі
+    DIM: 2
+    HOLOS: 3
+    TURBOTA: 4
+    POVERNENNIA: 5
+    PAMIAT: 6
+    MOZHLYVOSTI: 7
   daily_limit_per_topic: 3
 
 facebook:
