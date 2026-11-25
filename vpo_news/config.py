@@ -97,7 +97,7 @@ def load_settings(config_path: Path | str | None = None) -> Settings:
         publish_token=os.environ.get("TELEGRAM_PUBLISH_BOT_TOKEN") or approval_token,
         facebook_token=os.environ.get("FACEBOOK_PAGE_TOKEN") or None,
         coordinator_chat_id=_env_int("TELEGRAM_COORDINATOR_CHAT_ID") or int(tg.get("coordinator_chat_id") or 0),
-        test_group_chat_id=_env_int("TELEGRAM_TEST_GROUP_CHAT_ID"),
+        test_group_chat_id=_env_int("TELEGRAM_TEST_GROUP_CHAT_ID") or int(tg.get("test_group_chat_id") or 0) or None,
     )
     if not s.dry_run and not s.live_confirmed:
         log.warning("DRY_RUN=false, але LIVE_CONFIRMED не встановлено – працюю в тестовому режимі")
