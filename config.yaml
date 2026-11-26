@@ -396,7 +396,7 @@ telegram:
 facebook:
   enabled: true                # false – кнопка Facebook зникає, на Facebook нічого не йде
   page_name: "Конгрес ВПО України"
-  page_id: ""                  # ID сторінки (не секрет); токен – у FACEBOOK_PAGE_TOKEN
+  page_id: "61596437739955"    # ID сторінки (не секрет; з адреси fb.com/profile.php?id=…, звірити з me/accounts); токен – у FACEBOOK_PAGE_TOKEN
   graph_api_version: "v23.0"
   daily_limit: 2
 
@@ -405,7 +405,7 @@ linkedin:
   page_name: "Конгрес ВПО України"
   # ID організації – число з адреси адмінпанелі сторінки:
   # linkedin.com/company/<ID>/admin/ (не секрет); токен – у LINKEDIN_ACCESS_TOKEN
-  organization_id: ""
+  organization_id: "145460465"   # сторінка «Ukrainian Congress of IDPs»
   api_version: "202510"        # версія LinkedIn API (РРРРММ); LinkedIn підтримує версії близько року
   daily_limit: 2
 
