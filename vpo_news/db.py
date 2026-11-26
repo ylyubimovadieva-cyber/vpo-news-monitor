@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS drafts (
     deadline            TEXT,                 -- для рубрики МОЖЛИВОСТІ: РРРР-ММ-ДД
     reason              TEXT,
     status              TEXT NOT NULL,        -- doubtful | to_send | awaiting | editing | approved | rejected | expired | published
-    target              TEXT,                 -- tg | tgfb
+    target              TEXT,                 -- tg | tgfb | all (Telegram, Facebook і LinkedIn)
     edited              INTEGER NOT NULL DEFAULT 0,
     approval_message_id INTEGER,
     created_at          TEXT NOT NULL,
@@ -64,6 +64,9 @@ CREATE TABLE IF NOT EXISTS drafts (
     fb_status           TEXT NOT NULL DEFAULT 'none',
     fb_published_at     TEXT,
     fb_post_id          TEXT,
+    li_status           TEXT NOT NULL DEFAULT 'none',
+    li_published_at     TEXT,
+    li_post_id          TEXT,
     error               TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_drafts_status ON drafts(status);
@@ -98,6 +101,10 @@ class DB:
         cols = {r[1] for r in self.conn.execute("PRAGMA table_info(drafts)")}
         if "deadline" not in cols:
             self.conn.execute("ALTER TABLE drafts ADD COLUMN deadline TEXT")
+        if "li_status" not in cols:
+            self.conn.execute("ALTER TABLE drafts ADD COLUMN li_status TEXT NOT NULL DEFAULT 'none'")
+            self.conn.execute("ALTER TABLE drafts ADD COLUMN li_published_at TEXT")
+            self.conn.execute("ALTER TABLE drafts ADD COLUMN li_post_id TEXT")
 
     def close(self) -> None:
         self.conn.close()

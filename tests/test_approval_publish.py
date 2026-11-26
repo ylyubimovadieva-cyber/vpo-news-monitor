@@ -26,6 +26,7 @@ def _msg(update_id, text, user=111):
 
 
 def test_send_pending_has_four_buttons(cfg, db):
+    cfg["linkedin"]["enabled"] = False
     s = make_settings(cfg)
     _draft(db)
     api = FakeTelegram()
@@ -35,6 +36,75 @@ def test_send_pending_has_four_buttons(cfg, db):
     labels = [b["text"] for row in m["reply_markup"]["inline_keyboard"] for b in row]
     assert labels == ["Опублікувати в Telegram", "Опублікувати в Telegram і Facebook", "Редагувати", "Відхилити"]
     assert "Підстава підтвердження: першоджерело – pfu.gov.ua" in m["text"]
+
+
+def test_linkedin_button_when_enabled(cfg, db):
+    s = make_settings(cfg)
+    _draft(db)
+    api = FakeTelegram()
+    approval.send_pending(s, db, api)
+    labels = [b["text"] for row in api.sent[0]["reply_markup"]["inline_keyboard"] for b in row]
+    assert labels == ["Опублікувати в Telegram", "Опублікувати в Telegram і Facebook",
+                      "Опублікувати в Telegram, Facebook і LinkedIn", "Редагувати", "Відхилити"]
+
+
+class FakeLinkedIn:
+    def __init__(self):
+        self.posts = []
+
+    def post(self, message, link):
+        self.posts.append((message, link))
+        return f"urn:li:share:{len(self.posts)}"
+
+
+def test_approve_all_posts_everywhere_live(cfg, db):
+    s = make_settings(cfg, dry_run=False, live_confirmed=True)
+    did = _draft(db)
+    api = FakeTelegram()
+    approval.send_pending(s, db, api)
+    api.updates = [_cb(1, f"all:{did}", db.get_draft(did)["approval_message_id"])]
+    approval.process_updates(s, db, api)
+    d = db.get_draft(did)
+    assert d["target"] == "all" and d["fb_status"] == "queued" and d["li_status"] == "queued"
+    pub, fb, li = FakeTelegram(), FakeFacebook(), FakeLinkedIn()
+    publisher.run_queue(s, db, tg_api=pub, fb_api=fb, notify_api=FakeTelegram(), li_api=li)
+    assert pub.sent and fb.posts and li.posts[0][1] == "https://www.pfu.gov.ua/1-test/"
+    d = db.get_draft(did)
+    assert d["li_status"] == "published" and d["status"] == "published"
+
+
+def test_linkedin_only_after_its_button_and_never_in_dry_run(cfg, db):
+    s = make_settings(cfg, dry_run=False, live_confirmed=True)
+    _draft(db, status="approved", target="tgfb", tg_status="queued", fb_status="queued", decided_at=iso(utcnow()))
+    li = FakeLinkedIn()
+    publisher.run_queue(s, db, tg_api=FakeTelegram(), fb_api=FakeFacebook(), notify_api=FakeTelegram(), li_api=li)
+    assert li.posts == []
+
+    s2 = make_settings(cfg, dry_run=True, test_group_chat_id=-200)
+    did = _draft(db, cluster=2, status="approved", target="all", tg_status="queued", fb_status="queued",
+                 li_status="queued", decided_at=iso(utcnow()))
+    li2 = FakeLinkedIn()
+    publisher.run_queue(s2, db, tg_api=FakeTelegram(), fb_api=FakeFacebook(), notify_api=FakeTelegram(), li_api=li2)
+    assert li2.posts == [] and db.get_draft(did)["li_status"] == "dry_published"
+
+
+def test_linkedin_escapes_reserved_characters():
+    import httpx
+
+    from vpo_news.linkedin import LinkedInAPI, escape_commentary
+    assert escape_commentary("Програма (ВПО) #1 @x") == "Програма \\(ВПО\\) \\#1 \\@x"
+    seen = {}
+
+    def handler(req):
+        import json
+        seen["body"] = json.loads(req.content)
+        seen["auth"] = req.headers["authorization"]
+        return httpx.Response(201, headers={"x-restli-id": "urn:li:share:7"})
+
+    api = LinkedInAPI("123", "tok", client=httpx.Client(transport=httpx.MockTransport(handler)))
+    assert api.post("Текст (тест)", "https://x.gov.ua/a") == "urn:li:share:7"
+    assert seen["body"]["author"] == "urn:li:organization:123"
+    assert seen["body"]["commentary"].endswith("https://x.gov.ua/a") and "\\(тест\\)" in seen["body"]["commentary"]
 
 
 def test_facebook_button_hidden_when_disabled(cfg, db):

@@ -30,6 +30,7 @@ def build(s: Settings, db: DB) -> str:
     queued = one("SELECT COUNT(*) FROM drafts WHERE status = 'approved'")
     tg_pub = one("SELECT COUNT(*) FROM drafts WHERE tg_published_at >= ? AND tg_status IN ('published','dry_published')", (since,))
     fb_pub = one("SELECT COUNT(*) FROM drafts WHERE fb_published_at >= ? AND fb_status IN ('published','dry_published')", (since,))
+    li_pub = one("SELECT COUNT(*) FROM drafts WHERE li_published_at >= ? AND li_status IN ('published','dry_published')", (since,))
     rejected = one("SELECT COUNT(*) FROM drafts WHERE decided_at >= ? AND status = 'rejected'", (since,))
     expired = one("SELECT COUNT(*) FROM drafts WHERE decided_at >= ? AND status = 'expired'", (since,))
     waiting = one("SELECT COUNT(*) FROM items WHERE status = 'waiting'")
@@ -49,7 +50,7 @@ def build(s: Settings, db: DB) -> str:
         f"Нових чернеток на погодження: {drafts_new}",
         f"Зараз чекають вашого рішення: {awaiting}",
         f"Погоджено і чекають на публікацію (ліміти): {queued}",
-        f"Опубліковано: Telegram – {tg_pub}, Facebook – {fb_pub}",
+        f"Опубліковано: Telegram – {tg_pub}, Facebook – {fb_pub}, LinkedIn – {li_pub}",
         f"Відхилено вами: {rejected}; прострочено: {expired}",
         f"Чекають на друге джерело або на обробку моделлю: {waiting}",
     ]

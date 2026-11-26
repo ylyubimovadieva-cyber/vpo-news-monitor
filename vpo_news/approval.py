@@ -13,13 +13,17 @@ from .verify import describe_basis
 
 log = logging.getLogger(__name__)
 
-ACTIONS = {"tg": "Опублікувати в Telegram", "tgfb": "Опублікувати в Telegram і Facebook", "edit": "Редагувати", "rej": "Відхилити"}
+ACTIONS = {"tg": "Опублікувати в Telegram", "tgfb": "Опублікувати в Telegram і Facebook",
+           "all": "Опублікувати в Telegram, Facebook і LinkedIn", "edit": "Редагувати", "rej": "Відхилити"}
+LABELS = {"tg": "Telegram", "tgfb": "Telegram і Facebook", "all": "Telegram, Facebook і LinkedIn"}
 
 
-def keyboard(draft_id: int, facebook: bool) -> dict:
+def keyboard(draft_id: int, facebook: bool, linkedin: bool = False) -> dict:
     rows = [[{"text": ACTIONS["tg"], "callback_data": f"tg:{draft_id}"}]]
     if facebook:
         rows.append([{"text": ACTIONS["tgfb"], "callback_data": f"tgfb:{draft_id}"}])
+    if facebook and linkedin:
+        rows.append([{"text": ACTIONS["all"], "callback_data": f"all:{draft_id}"}])
     rows.append([
         {"text": ACTIONS["edit"], "callback_data": f"edit:{draft_id}"},
         {"text": ACTIONS["rej"], "callback_data": f"rej:{draft_id}"},
@@ -74,7 +78,8 @@ def send_pending(s: Settings, db: DB, api: TelegramAPI | None = None) -> int:
         db.update_draft(d["id"], sent_at=iso(utcnow()))
         d = db.get_draft(d["id"])
         try:
-            msg = api.send_message(s.coordinator_chat_id, render(s, d), reply_markup=keyboard(d["id"], s.facebook_enabled),
+            msg = api.send_message(s.coordinator_chat_id, render(s, d),
+                                   reply_markup=keyboard(d["id"], s.facebook_enabled, s.linkedin_enabled),
                                    disable_preview=True)
         except TelegramError as exc:
             log.warning("Не вдалося надіслати чернетку %s: %s", d["id"], exc.code)
@@ -111,15 +116,19 @@ def _handle_callback(s: Settings, db: DB, api: TelegramAPI, cq: dict) -> None:
         return
 
     now = iso(utcnow())
-    if action in ("tg", "tgfb"):
-        if action == "tgfb" and not s.facebook_enabled:
+    if action in ("tg", "tgfb", "all"):
+        if action in ("tgfb", "all") and not s.facebook_enabled:
             api.answer_callback(cq["id"], "Публікацію на Facebook вимкнено")
             return
+        if action == "all" and not s.linkedin_enabled:
+            api.answer_callback(cq["id"], "Публікацію в LinkedIn вимкнено")
+            return
         db.update_draft(d["id"], status="approved", target=action, decided_at=now, tg_status="queued",
-                        fb_status="queued" if action == "tgfb" else "none")
+                        fb_status="queued" if action in ("tgfb", "all") else "none",
+                        li_status="queued" if action == "all" else "none")
         if db.get_meta("editing_draft") == str(d["id"]):
             db.set_meta("editing_draft", None)
-        label = "Telegram" if action == "tg" else "Telegram і Facebook"
+        label = LABELS[action]
         api.answer_callback(cq["id"], f"Погоджено: {label}")
         _close_message(s, api, db.get_draft(d["id"]), f"Рішення: погоджено для публікації в {label}. "
                        "Допис вийде найближчим запуском з урахуванням денних лімітів.")
@@ -169,7 +178,8 @@ def _handle_text(s: Settings, db: DB, api: TelegramAPI, msg: dict) -> None:
     db.update_draft(d["id"], text=new_text, warnings=warnings, edited=1, status="awaiting")
     db.set_meta("editing_draft", None)
     d = db.get_draft(d["id"])
-    sent = api.send_message(s.coordinator_chat_id, render(s, d), reply_markup=keyboard(d["id"], s.facebook_enabled),
+    sent = api.send_message(s.coordinator_chat_id, render(s, d),
+                            reply_markup=keyboard(d["id"], s.facebook_enabled, s.linkedin_enabled),
                             disable_preview=True)
     db.update_draft(d["id"], approval_message_id=sent["message_id"])
     if old_message:

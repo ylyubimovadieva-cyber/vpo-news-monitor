@@ -52,3 +52,12 @@ def test_telegram_domain_only_for_allowlisted_channel(cfg):
     assert collector._source_info({"name": "X", "type": "telegram", "channel": "anon_insider"}, "t.me", cfg) is None
     # посилання на t.me з RSS медіа – як і раніше, не джерело
     assert collector._source_info({"name": "Медіа", "type": "rss"}, "t.me", cfg) is None
+
+
+def test_media_channels_share_owner_with_site(cfg):
+    # канал і сайт одного видання – одне джерело, а не два незалежні
+    for ch, owner, kind in [("suspilnenews", "suspilne", "media"), ("ukrpravda_news", "up", "media"),
+                            ("unhcr_ukraine_official", "unhcr.org", "primary")]:
+        info = collector._source_info({"name": ch, "type": "telegram", "channel": ch}, "t.me", cfg)
+        assert info and info.owner == owner and info.kind == kind
+    assert collector.verify.classify_domain("pravda.com.ua", cfg).owner == "up"

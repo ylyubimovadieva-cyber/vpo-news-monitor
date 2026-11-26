@@ -148,6 +148,12 @@ blocked_domains:
 telegram_channels:
   - {channel: dmytro_lubinetzs, name: "Дмитро Лубінець, Уповноважений ВРУ з прав людини", owner: ombudsman, kind: primary}
   - {channel: frolovproparliament, name: "Павло Фролов, голова ТСК з питань захисту прав ВПО", owner: frolov, kind: primary}
+  # Офіційні верифіковані канали медіа (owner збігається з сайтом у whitelist.media,
+  # тож сайт і канал одного видання – це одне джерело, а не два незалежні)
+  - {channel: suspilnenews, name: "Суспільне Новини", owner: suspilne, kind: media}
+  - {channel: ukrpravda_news, name: "Українська правда", owner: up, kind: media}
+  # Офіційний канал УВКБ ООН в Україні
+  - {channel: unhcr_ukraine_official, name: "УВКБ ООН в Україні", owner: unhcr.org, kind: primary}
 
 # Якщо в тексті новини є такі посилання на джерела, новина відкидається
 # (передрук російських матеріалів, анонімні канали).
@@ -180,8 +186,10 @@ blocked_attribution_patterns:
 sources:
   # --- медіа
   - {name: "Укрінформ", type: rss, url: "https://www.ukrinform.ua/rss/block-lastnews"}
-  - {name: "Суспільне", type: rss, url: "https://suspilne.media/rss/all.rss"}
-  - {name: "Радіо Свобода", type: rss, url: "https://www.radiosvoboda.org/api/zrqiteuuir"}
+  # Сайт Суспільного забороняє автоматичне читання (robots.txt) – беремо його
+  # офіційний Telegram-канал (нижче). Радіо Свобода вимкнено на прохання координаторки.
+  - {name: "Суспільне", type: rss, url: "https://suspilne.media/rss/all.rss", enabled: false}
+  - {name: "Радіо Свобода", type: rss, url: "https://www.radiosvoboda.org/api/zrqiteuuir", enabled: false}
   - {name: "Українська правда", type: rss, url: "https://www.pravda.com.ua/rss/"}
   - {name: "LB.ua", type: rss, url: "https://lb.ua/rss/ukr/news.xml"}
   - {name: "Слово і діло", type: rss, url: "https://www.slovoidilo.ua/rss.xml"}
@@ -257,6 +265,9 @@ sources:
   # читається публічна вебсторінка каналу t.me/s/<канал>)
   - {name: "Дмитро Лубінець (Telegram)", type: telegram, channel: dmytro_lubinetzs}
   - {name: "Павло Фролов (Telegram)", type: telegram, channel: frolovproparliament}
+  - {name: "Суспільне Новини (Telegram)", type: telegram, channel: suspilnenews}
+  - {name: "Українська правда (Telegram)", type: telegram, channel: ukrpravda_news}
+  - {name: "УВКБ ООН в Україні (Telegram)", type: telegram, channel: unhcr_ukraine_official}
 
   # --- офіційні сторінки Facebook (працюють лише з FACEBOOK_READ_TOKEN)
   # Graph API читає лише СТОРІНКИ, а не особисті профілі: якщо сторінка
@@ -387,6 +398,15 @@ facebook:
   page_name: "Конгрес ВПО України"
   page_id: ""                  # ID сторінки (не секрет); токен – у FACEBOOK_PAGE_TOKEN
   graph_api_version: "v23.0"
+  daily_limit: 2
+
+linkedin:
+  enabled: true                # false – кнопка з LinkedIn зникає, у LinkedIn нічого не йде
+  page_name: "Конгрес ВПО України"
+  # ID організації – число з адреси адмінпанелі сторінки:
+  # linkedin.com/company/<ID>/admin/ (не секрет); токен – у LINKEDIN_ACCESS_TOKEN
+  organization_id: ""
+  api_version: "202510"        # версія LinkedIn API (РРРРММ); LinkedIn підтримує версії близько року
   daily_limit: 2
 
 schedule:

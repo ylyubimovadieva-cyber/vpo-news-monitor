@@ -43,6 +43,7 @@ class Settings:
     approval_token: str | None = None
     publish_token: str | None = None
     facebook_token: str | None = None
+    linkedin_token: str | None = None
     coordinator_chat_id: int = 0
     test_group_chat_id: int | None = None
 
@@ -73,6 +74,10 @@ class Settings:
     def facebook_enabled(self) -> bool:
         return bool(self.cfg.get("facebook", {}).get("enabled", False))
 
+    @property
+    def linkedin_enabled(self) -> bool:
+        return bool(self.cfg.get("linkedin", {}).get("enabled", False))
+
 
 def load_config(path: Path | str | None = None) -> dict:
     path = Path(path or os.environ.get("VPO_CONFIG") or ROOT / "config.yaml")
@@ -96,6 +101,7 @@ def load_settings(config_path: Path | str | None = None) -> Settings:
         approval_token=approval_token,
         publish_token=os.environ.get("TELEGRAM_PUBLISH_BOT_TOKEN") or approval_token,
         facebook_token=os.environ.get("FACEBOOK_PAGE_TOKEN") or None,
+        linkedin_token=os.environ.get("LINKEDIN_ACCESS_TOKEN") or None,
         coordinator_chat_id=_env_int("TELEGRAM_COORDINATOR_CHAT_ID") or int(tg.get("coordinator_chat_id") or 0),
         test_group_chat_id=_env_int("TELEGRAM_TEST_GROUP_CHAT_ID") or int(tg.get("test_group_chat_id") or 0) or None,
     )

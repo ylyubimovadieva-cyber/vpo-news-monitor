@@ -11,6 +11,7 @@ import logging
 from .config import Settings
 from .db import DB
 from .facebook import FacebookAPI, FacebookError
+from .linkedin import LinkedInAPI, LinkedInError
 from .telegram import TelegramAPI, TelegramError
 from .util import iso, kyiv_date, parse_iso, utcnow
 
@@ -58,11 +59,19 @@ def _publish_facebook(s: Settings, fb: FacebookAPI | None, d) -> tuple[str, str 
     return "published", fb.post(d["text"], d["source_url"])
 
 
+def _publish_linkedin(s: Settings, li: LinkedInAPI | None, d) -> tuple[str, str | None]:
+    if s.publish_mode != "live":
+        log.info("[DRY_RUN] Допис №%s було б опубліковано в LinkedIn", d["id"])
+        return "dry_published", None
+    return "published", li.post(d["text"], d["source_url"])
+
+
 def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: FacebookAPI | None = None,
-              notify_api: TelegramAPI | None = None) -> dict:
-    stats = {"tg": 0, "fb": 0, "deferred": 0}
+              notify_api: TelegramAPI | None = None, li_api: LinkedInAPI | None = None) -> dict:
+    stats = {"tg": 0, "fb": 0, "li": 0, "deferred": 0}
     tg_limit = int(s.cfg.get("telegram", {}).get("daily_limit_per_topic", 3))
     fb_limit = int(s.cfg.get("facebook", {}).get("daily_limit", 2))
+    li_limit = int(s.cfg.get("linkedin", {}).get("daily_limit", 2))
     mode = s.publish_mode
 
     if tg_api is None and mode != "log" and s.publish_token:
@@ -72,6 +81,9 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
     if fb_api is None and mode == "live" and s.facebook_enabled and s.facebook_token:
         fb = s.cfg["facebook"]
         fb_api = FacebookAPI(str(fb.get("page_id") or ""), s.facebook_token, fb.get("graph_api_version", "v23.0"))
+    li_cfg = s.cfg.get("linkedin", {})
+    if li_api is None and mode == "live" and s.linkedin_enabled and s.linkedin_token and li_cfg.get("organization_id"):
+        li_api = LinkedInAPI(str(li_cfg["organization_id"]), s.linkedin_token, li_cfg.get("api_version", "202510"))
     tag = "" if mode == "live" else "[DRY_RUN] "
 
     queue = sorted(db.drafts_by_status("approved"), key=lambda d: d["decided_at"] or "")
@@ -99,7 +111,7 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
         d = db.get_draft(d["id"])
 
         # ---- Facebook (лише якщо координаторка обрала кнопку з Facebook)
-        if d["fb_status"] == "queued" and d["target"] == "tgfb":
+        if d["fb_status"] == "queued" and d["target"] in ("tgfb", "all"):
             if not s.facebook_enabled:
                 db.update_draft(d["id"], fb_status="none")
             elif _count_today(db, "fb_status", "fb_published_at") >= fb_limit:
@@ -122,8 +134,33 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
                         db.update_draft(d["id"], error=f"Facebook: {exc}")
         d = db.get_draft(d["id"])
 
+        # ---- LinkedIn (лише якщо координаторка обрала кнопку з LinkedIn)
+        if d["li_status"] == "queued" and d["target"] == "all":
+            if not s.linkedin_enabled:
+                db.update_draft(d["id"], li_status="none")
+            elif _count_today(db, "li_status", "li_published_at") >= li_limit:
+                stats["deferred"] += 1
+            elif mode == "live" and li_api is None:
+                log.warning("Не задано LINKEDIN_ACCESS_TOKEN або linkedin.organization_id – допис №%s чекає", d["id"])
+            else:
+                try:
+                    status, post_id = _publish_linkedin(s, li_api, d)
+                    db.update_draft(d["id"], li_status=status, li_post_id=post_id, li_published_at=iso(utcnow()))
+                    stats["li"] += 1
+                    _notify(s, notify_api, f"{tag}Допис №{d['id']} опубліковано в LinkedIn.")
+                except LinkedInError as exc:
+                    log.warning("LinkedIn: допис №%s не опубліковано, код %s", d["id"], exc.code)
+                    if exc.token_invalid:
+                        db.update_draft(d["id"], li_status="failed", error="LinkedIn: недійсний токен")
+                        _notify(s, notify_api, f"Допис №{d['id']} не вдалося опублікувати в LinkedIn: токен "
+                                "недійсний або прострочений (він діє 60 днів). Оновіть LINKEDIN_ACCESS_TOKEN за інструкцією в README.")
+                    else:
+                        db.update_draft(d["id"], error=f"LinkedIn: {exc}")
+        d = db.get_draft(d["id"])
+
         tg_done = d["tg_status"] in PUBLISHED or d["tg_status"] == "failed"
-        fb_done = d["target"] != "tgfb" or d["fb_status"] in PUBLISHED + ("failed", "none")
-        if tg_done and fb_done:
+        fb_done = d["target"] not in ("tgfb", "all") or d["fb_status"] in PUBLISHED + ("failed", "none")
+        li_done = d["target"] != "all" or d["li_status"] in PUBLISHED + ("failed", "none")
+        if tg_done and fb_done and li_done:
             db.update_draft(d["id"], status="published")
     return stats
