@@ -111,3 +111,18 @@ def test_body_length_range_fits_total(cfg):
     lo, hi = text_rules.body_length_range(HEADER, URL, cfg)
     overhead = len(text_rules.compose(HEADER, "", URL))
     assert lo + overhead >= 400 - 2 and hi + overhead <= 700 + 2
+
+
+def test_unattributed_judgement_warning(cfg):
+    from vpo_news.text_rules import unattributed_judgement
+    assert unattributed_judgement("Кластер оновив рекомендації. Допомога важлива саме до початку сезону.")
+    assert unattributed_judgement("Кластер оновив рекомендації. У кластері наголошують, що допомога важлива.") is None
+    assert unattributed_judgement("Програма для вчителів. Заповнити форму потрібно до 11 грудня 2026 року.") is None
+    assert unattributed_judgement("Фонд евакуює людей щодня.") is None
+
+
+def test_number_ranges_get_short_dash():
+    from vpo_news.text_rules import sanitize
+    assert sanitize("учнів 5-11 класів") == "учнів 5–11 класів"
+    assert sanitize("тел. 067-123-45-67") == "тел. 067-123-45-67"
+    assert sanitize("https://x.ua/a-1-2") == "https://x.ua/a-1-2"

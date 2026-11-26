@@ -56,6 +56,8 @@ def sanitize(text: str) -> str:
         part = part.replace("?!", "?").replace("!?", "?")
         part = re.sub(r"!+", ".", part)
         part = re.sub(r"\.{2,}(?!\.)", ".", part) if "..." not in part else part
+        # «5-11 класи» → «5–11 класи»; номери телефонів (067-123-45-67) не чіпаємо
+        part = re.sub(r"(?<![\d-])(\d{1,2})-(\d{1,2})(?![\d-])", r"\1–\2", part)
         return part
 
     text = _outside_urls(text.replace("\r\n", "\n"), fix)
@@ -63,6 +65,27 @@ def sanitize(text: str) -> str:
     text = "\n".join(lines)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
+
+
+JUDGEMENT_RE = re.compile(r"\b(важлив|потрібн|необхідн|має бути|мають бути|варто|слід|треба|гідн|ключов|визначают)", re.I)
+ATTRIBUTION_RE = re.compile(r"(за словами|наголош|зазнач|кажуть|каже|радять|радить|вважа|повідом|заклика|підкреслю|на думку|у фонді|в організації|в управлінні|у міністерстві|автори|учасники|переконан)", re.I)
+
+
+def unattributed_judgement(text: str, header: str = "") -> str | None:
+    """Останнє речення основного тексту, якщо воно схоже на оцінку без автора."""
+    body = _strip_urls(text)
+    if header and body.startswith(header):
+        body = body[len(header):]
+    body = "\n".join(ln for ln in body.split("\n") if not ln.strip().startswith("Джерело"))
+    sentences = [s.strip() for s in re.split(r"(?<=[.?…])\s+", body.strip()) if s.strip()]
+    if not sentences:
+        return None
+    last = sentences[-1]
+    # Практичні інструкції («заповнити форму потрібно до 11 грудня») – не оцінка.
+    practical = re.search(r"(до \d|подати|заповнити|зареєструва|звернутися|записатися)", last, re.I)
+    if JUDGEMENT_RE.search(last) and not ATTRIBUTION_RE.search(last) and not practical:
+        return last
+    return None
 
 
 def compose(header: str, body: str, source_url: str, prefix: str = "Джерело: ") -> str:
@@ -125,6 +148,10 @@ def validate(text: str, header: str, source_url: str, cfg: dict, source_text: st
         if pat.search(plain):
             errors.append("Не можна писати, що Конгрес чи платформа виконує або впроваджує Стратегію")
             break
+
+    last = unattributed_judgement(text, header)
+    if last:
+        warnings.append(f"Останнє речення схоже на оцінку без автора: «{last[:80]}»")
 
     if EMAIL_RE.search(plain):
         warnings.append("Є адреса e-mail – перевірте, що це не персональні дані")
