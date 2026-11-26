@@ -131,7 +131,7 @@ def _handle_callback(s: Settings, db: DB, api: TelegramAPI, cq: dict) -> None:
         label = LABELS[action]
         api.answer_callback(cq["id"], f"Погоджено: {label}")
         _close_message(s, api, db.get_draft(d["id"]), f"Рішення: погоджено для публікації в {label}. "
-                       "Допис вийде найближчим запуском з урахуванням денних лімітів.")
+                       "Допис вийде за кілька секунд, якщо не вичерпано денний ліміт теми; інакше – наступного дня.")
     elif action == "rej":
         db.update_draft(d["id"], status="rejected", decided_at=now)
         if db.get_meta("editing_draft") == str(d["id"]):
