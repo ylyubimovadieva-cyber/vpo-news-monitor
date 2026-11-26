@@ -69,7 +69,8 @@ def cmd_tick(args) -> int:
     every = float(s.cfg.get("schedule", {}).get("collect_every_hours", 3))
     last = parse_iso(db.get_meta("last_collect"))
     # невеликий запас, щоб затримки розкладу GitHub не зсували збір на цілий цикл
-    if last is None or utcnow() - last >= timedelta(hours=every) - timedelta(minutes=15):
+    due = last is None or utcnow() - last >= timedelta(hours=every) - timedelta(minutes=15)
+    if due or getattr(args, "collect_now", False):
         db.set_meta("last_collect", iso(utcnow()))
         db.close()
         cmd_collect(args)
@@ -115,7 +116,9 @@ def main(argv=None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("collect").set_defaults(fn=cmd_collect)
     sub.add_parser("approvals").set_defaults(fn=cmd_approvals)
-    sub.add_parser("tick").set_defaults(fn=cmd_tick)
+    t = sub.add_parser("tick")
+    t.add_argument("--collect-now", action="store_true", help="зібрати новини зараз, не чекаючи розкладу")
+    t.set_defaults(fn=cmd_tick)
     d = sub.add_parser("digest")
     d.add_argument("--force", action="store_true", help="надіслати зараз, незалежно від часу")
     d.add_argument("--print", action="store_true", help="лише показати текст, нічого не надсилати")
