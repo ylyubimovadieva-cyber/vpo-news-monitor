@@ -91,7 +91,8 @@ def _publish_linkedin(s: Settings, li: LinkedInAPI | None, d) -> tuple[str, str 
     if s.publish_mode != "live":
         log.info("[DRY_RUN] Допис №%s було б опубліковано в LinkedIn", d["id"])
         return "dry_published", None
-    return "published", li.post(d["text"], d["source_url"])
+    # У LinkedIn – лише англійська версія для міжнародної аудиторії.
+    return "published", li.post(d["text_en"], d["source_url"])
 
 
 def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: FacebookAPI | None = None,
@@ -182,7 +183,7 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
 
         # ---- LinkedIn (лише якщо координаторка обрала кнопку з LinkedIn)
         if d["li_status"] == "queued" and d["target"] == "all" and tg_out:
-            if not s.linkedin_button:
+            if not s.linkedin_button or not ("text_en" in d.keys() and d["text_en"]):
                 db.update_draft(d["id"], li_status="none")
             elif _count_today(db, "li_status", "li_published_at", live=live) >= li_limit:
                 stats["deferred"] += 1

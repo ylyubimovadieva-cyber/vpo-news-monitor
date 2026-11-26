@@ -7,6 +7,8 @@ from .conftest import FakeFacebook, FakeTelegram, make_settings
 
 TEXT = "ТУРБОТА – право на турботу\n\n" + "Текст допису. " * 30 + "\n\nДжерело: https://www.pfu.gov.ua/1-test/"
 
+EN = "HOME – the right to stability\n\n" + "English text. " * 30 + "\n\nSource: https://www.pfu.gov.ua/1-test/"
+
 
 def _draft(db, pillar="TURBOTA", cluster=1, status="to_send", **kw):
     return db.insert_draft(cluster_id=cluster, item_id=cluster, pillar=pillar, text=TEXT,
@@ -40,7 +42,7 @@ def test_send_pending_has_four_buttons(cfg, db):
 
 def test_linkedin_button_when_enabled(cfg, db):
     s = make_settings(cfg)
-    _draft(db)
+    _draft(db, international=1, text_en=EN)
     api = FakeTelegram()
     approval.send_pending(s, db, api)
     labels = [b["text"] for row in api.sent[0]["reply_markup"]["inline_keyboard"] for b in row]
@@ -59,7 +61,7 @@ class FakeLinkedIn:
 
 def test_approve_all_posts_everywhere_live(cfg, db):
     s = make_settings(cfg, dry_run=False, live_confirmed=True, facebook_token="fb", linkedin_token="li")
-    did = _draft(db)
+    did = _draft(db, international=1, text_en=EN)
     api = FakeTelegram()
     approval.send_pending(s, db, api)
     api.updates = [_cb(1, f"all:{did}", db.get_draft(did)["approval_message_id"])]
@@ -82,7 +84,7 @@ def test_linkedin_only_after_its_button_and_never_in_dry_run(cfg, db):
 
     s2 = make_settings(cfg, dry_run=True, test_group_chat_id=-200)
     did = _draft(db, cluster=2, status="approved", target="all", tg_status="queued", fb_status="queued",
-                 li_status="queued", decided_at=iso(utcnow()))
+                 li_status="queued", decided_at=iso(utcnow()), international=1, text_en=EN)
     li2 = FakeLinkedIn()
     publisher.run_queue(s2, db, tg_api=FakeTelegram(), fb_api=FakeFacebook(), notify_api=FakeTelegram(), li_api=li2)
     assert li2.posts == [] and db.get_draft(did)["li_status"] == "dry_published"
@@ -316,3 +318,26 @@ def test_approved_in_test_mode_goes_live_and_skips_facebook_without_token(cfg, d
     assert pub.sent and pub.sent[0]["chat_id"] == -100500 and not pub.sent[0]["text"].startswith("[ТЕСТ]")
     assert r["tg_status"] == "published" and r["fb_status"] == "none" and r["status"] == "published"
     assert fb.posts == []
+
+
+def test_linkedin_only_for_international_news_in_english(cfg, db):
+    s = make_settings(cfg, dry_run=False, live_confirmed=True, facebook_token="fb", linkedin_token="li")
+    local = _draft(db, cluster=1)                                   # локальна новина – без LinkedIn
+    intl = _draft(db, cluster=2, international=1, text_en=EN)      # міжнародна – з англійським текстом
+    api = FakeTelegram()
+    approval.send_pending(s, db, api)
+    by_id = {m["text"].split("\n")[0]: m for m in api.sent}
+    lbl = lambda m: [b["text"] for row in m["reply_markup"]["inline_keyboard"] for b in row]  # noqa: E731
+    assert "Опублікувати в Telegram, Facebook і LinkedIn" not in lbl(by_id[f"Чернетка №{local}"])
+    m = by_id[f"Чернетка №{intl}"]
+    assert "Опублікувати в Telegram, Facebook і LinkedIn" in lbl(m) and "Для LinkedIn" in m["text"] and "English text." in m["text"]
+    # кнопку LinkedIn під локальною новиною не приймаємо
+    api.updates = [_cb(1, f"all:{local}", db.get_draft(local)["approval_message_id"])]
+    approval.process_updates(s, db, api)
+    assert db.get_draft(local)["status"] == "awaiting"
+    # міжнародна – у LinkedIn іде англійська версія
+    api.updates = [_cb(2, f"all:{intl}", db.get_draft(intl)["approval_message_id"])]
+    approval.process_updates(s, db, api)
+    li = FakeLinkedIn()
+    publisher.run_queue(s, db, tg_api=FakeTelegram(), fb_api=FakeFacebook(), notify_api=FakeTelegram(), li_api=li)
+    assert li.posts and li.posts[0][0].startswith("HOME – the right to stability")

@@ -172,6 +172,12 @@ def process_clusters(cfg: dict, db: DB, classifier: Classifier | None) -> dict:
             elif deadline <= kyiv_today() + timedelta(days=OPPORTUNITY_MIN_DAYS_LEFT):
                 reasons.append(f"дедлайн {deadline:%d.%m.%Y} уже минув або надто близько")
         status = "doubtful" if reasons else "to_send"
+        # Англійська версія – лише для новин, важливих міжнародній аудиторії (LinkedIn).
+        international = bool(res.get("international")) and bool((res.get("summary_en") or "").strip())
+        text_en = None
+        if international:
+            header_en = cfg["pillars"][pillar].get("title_en") or header
+            text_en = text_rules.compose(header_en, text_rules.sanitize(res["summary_en"]), source_url, "Source: ")
         # Зображення – лише для чернеток, що підуть координаторці (перевірка коштує запиту до моделі).
         image = {}
         if status == "to_send":
@@ -186,6 +192,7 @@ def process_clusters(cfg: dict, db: DB, classifier: Classifier | None) -> dict:
             confidence=float(res["confidence"]), warnings=warnings,
             reason="; ".join(reasons) or res.get("reason"), status=status,
             deadline=deadline.isoformat() if deadline else None,
+            international=int(international), text_en=text_en,
             **image,
         )
         for i in items:

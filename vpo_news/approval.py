@@ -31,6 +31,11 @@ def keyboard(draft_id: int, facebook: bool, linkedin: bool = False) -> dict:
     return {"inline_keyboard": rows}
 
 
+def _intl(d) -> bool:
+    """Новина для міжнародної аудиторії з англійською версією – лише такі йдуть у LinkedIn."""
+    return "international" in d.keys() and bool(d["international"]) and bool(d["text_en"])
+
+
 def render(s: Settings, d, footer: str | None = None) -> str:
     title = s.pillar_title(d["pillar"])
     second = f" (другий стовп: {s.pillar_title(d['secondary_pillar'])})" if d["secondary_pillar"] else ""
@@ -54,6 +59,10 @@ def render(s: Settings, d, footer: str | None = None) -> str:
     if w:
         lines.append("Зверніть увагу: " + "; ".join(w))
     lines += ["", "Текст допису:", "", d["text"]]
+    if _intl(d):
+        lines += ["", "Для LinkedIn (міжнародна аудиторія), англійською:", "", d["text_en"]]
+        if d["edited"]:
+            lines.append("(Англійська версія не змінюється під час редагування – за потреби відхиліть публікацію в LinkedIn.)")
     if footer:
         lines += ["", footer]
     return "\n".join(lines)
@@ -82,7 +91,7 @@ def send_pending(s: Settings, db: DB, api: TelegramAPI | None = None) -> int:
         _send_image(s, api, d)
         try:
             msg = api.send_message(s.coordinator_chat_id, render(s, d),
-                                   reply_markup=keyboard(d["id"], s.facebook_button, s.linkedin_button),
+                                   reply_markup=keyboard(d["id"], s.facebook_button, s.linkedin_button and _intl(d)),
                                    disable_preview=True)
         except TelegramError as exc:
             log.warning("Не вдалося надіслати чернетку %s: %s", d["id"], exc.code)
@@ -136,7 +145,7 @@ def _handle_callback(s: Settings, db: DB, api: TelegramAPI, cq: dict) -> None:
         if action in ("tgfb", "all") and not s.facebook_button:
             api.answer_callback(cq["id"], "Публікацію на Facebook вимкнено")
             return
-        if action == "all" and not s.linkedin_button:
+        if action == "all" and not (s.linkedin_button and _intl(d)):
             api.answer_callback(cq["id"], "Публікацію в LinkedIn вимкнено")
             return
         db.update_draft(d["id"], status="approved", target=action, decided_at=now, tg_status="queued",
@@ -195,7 +204,7 @@ def _handle_text(s: Settings, db: DB, api: TelegramAPI, msg: dict) -> None:
     db.set_meta("editing_draft", None)
     d = db.get_draft(d["id"])
     sent = api.send_message(s.coordinator_chat_id, render(s, d),
-                            reply_markup=keyboard(d["id"], s.facebook_button, s.linkedin_button),
+                            reply_markup=keyboard(d["id"], s.facebook_button, s.linkedin_button and _intl(d)),
                             disable_preview=True)
     db.update_draft(d["id"], approval_message_id=sent["message_id"])
     if old_message:

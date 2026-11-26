@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS drafts (
     image_kind          TEXT,                 -- source (з першоджерела) | card (картка платформи) | NULL
     image_url           TEXT,
     image_note          TEXT,                 -- звідки зображення і результат перевірки
+    international       INTEGER NOT NULL DEFAULT 0,   -- 1 – новина для міжнародної аудиторії (LinkedIn)
+    text_en             TEXT,                 -- англійська версія для LinkedIn
     error               TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_drafts_status ON drafts(status);
@@ -105,9 +107,11 @@ class DB:
         cols = {r[1] for r in self.conn.execute("PRAGMA table_info(drafts)")}
         if "deadline" not in cols:
             self.conn.execute("ALTER TABLE drafts ADD COLUMN deadline TEXT")
-        for col in ("image_kind", "image_url", "image_note"):
+        for col in ("image_kind", "image_url", "image_note", "text_en"):
             if col not in cols:
                 self.conn.execute(f"ALTER TABLE drafts ADD COLUMN {col} TEXT")
+        if "international" not in cols:
+            self.conn.execute("ALTER TABLE drafts ADD COLUMN international INTEGER NOT NULL DEFAULT 0")
         icols = {r[1] for r in self.conn.execute("PRAGMA table_info(items)")}
         if "image_url" not in icols:
             self.conn.execute("ALTER TABLE items ADD COLUMN image_url TEXT")
