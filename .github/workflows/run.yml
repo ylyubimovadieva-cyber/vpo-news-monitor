@@ -1,5 +1,5 @@
-# Один процес кожні 10 хвилин: кнопки координаторки, публікація погодженого;
-# раз на 3 години – збір новин; о 9:00 за Києвом – щоденний підсумок.
+# Процес за розкладом: кнопки координаторки і публікація погодженого; раз на 3 години –
+# збір новин; о 9:00 за Києвом – підсумок. Після цього до 45 хв слухає бота.
 name: monitor
 
 on:
@@ -23,7 +23,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       # Безпечні значення за замовчуванням. Бойовий режим вмикається лише
       # змінними репозиторію DRY_RUN=false і LIVE_CONFIRMED=true (див. README).
@@ -67,7 +67,10 @@ jobs:
         run: bash scripts/state.sh pull
       - id: tick
         if: steps.ready.outputs.ok == 'true'
-        run: python -m vpo_news tick ${{ inputs.collect_now && '--collect-now' || '' }}
+        # Після збору процес ще слухає бота (разом до 45 хв), тож кнопки координаторки
+        # спрацьовують за секунди, а не чекають наступного запуску за розкладом.
+        timeout-minutes: 50
+        run: python -m vpo_news tick --listen-minutes 45 ${{ inputs.collect_now && '--collect-now' || '' }}
       - name: Зберегти стан
         if: always() && steps.ready.outputs.ok == 'true'
         run: bash scripts/state.sh push

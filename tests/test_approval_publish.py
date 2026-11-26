@@ -243,3 +243,23 @@ def test_daily_limits(cfg, db):
     assert stats["fb"] == 2 and len(fb.posts) == 2       # не більше 2 на день у Facebook
     queued = db.query("SELECT COUNT(*) FROM drafts WHERE status='approved'")[0][0]
     assert queued == 3                                    # надлишок чекає наступного дня
+
+
+def test_listen_reacts_to_button_immediately(cfg, db, monkeypatch, tmp_path):
+    """Режим прослуховування: натискання обробляється й публікується в межах одного запуску."""
+    from vpo_news import __main__ as cli
+    s = make_settings(cfg, test_group_chat_id=-200, db_path=db.path if hasattr(db, "path") else None)
+    s.db_path = s.db_path or tmp_path / "x.sqlite"
+    did = _draft(db)
+    api = FakeTelegram()
+    approval.send_pending(s, db, api)
+    api.updates = [_cb(1, f"tg:{did}", db.get_draft(did)["approval_message_id"])]
+    pub = FakeTelegram()
+    monkeypatch.setattr(approval, "_tg", lambda s_, a=None: api)
+    monkeypatch.setattr(cli, "DB", lambda path: db)
+    monkeypatch.setattr(db, "close", lambda: None)
+    real_run = publisher.run_queue
+    monkeypatch.setattr(cli.publisher, "run_queue", lambda s_, db_: real_run(s_, db_, tg_api=pub, notify_api=FakeTelegram()))
+    cli.listen(s, minutes=0.02)
+    assert db.get_draft(did)["tg_status"] == "dry_published"
+    assert pub.sent and pub.sent[0]["chat_id"] == -200

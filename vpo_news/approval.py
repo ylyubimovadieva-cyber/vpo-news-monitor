@@ -189,13 +189,16 @@ def _handle_text(s: Settings, db: DB, api: TelegramAPI, msg: dict) -> None:
             pass
 
 
-def process_updates(s: Settings, db: DB, api: TelegramAPI | None = None) -> int:
-    """Обробляє натискання кнопок і повідомлення координаторки (getUpdates)."""
+def process_updates(s: Settings, db: DB, api: TelegramAPI | None = None, wait: int = 0) -> int:
+    """Обробляє натискання кнопок і повідомлення координаторки (getUpdates).
+
+    wait – скільки секунд чекати на нові оновлення (long polling), 0 – не чекати.
+    """
     api = _tg(s, api)
     if api is None:
         return 0
     offset = db.get_meta("tg_offset")
-    updates = api.get_updates(offset=int(offset) if offset else None, timeout=0,
+    updates = api.get_updates(offset=int(offset) if offset else None, timeout=wait,
                               allowed_updates=["message", "callback_query"])
     for upd in updates:
         try:

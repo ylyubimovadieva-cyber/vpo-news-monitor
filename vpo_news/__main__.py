@@ -23,6 +23,7 @@ from datetime import timedelta
 from .util import iso, kyiv_date, parse_iso, setup_logging, utcnow
 
 log = logging.getLogger("vpo_news")
+STARTED = utcnow()
 
 
 def _classifier(cfg):
@@ -76,7 +77,38 @@ def cmd_tick(args) -> int:
         cmd_collect(args)
         db = DB(s.db_path)
     digest.send(s, db)
+    db.close()
+    # --listen-minutes – загальний час роботи процесу; збір новин теж його займає.
+    total = float(getattr(args, "listen_minutes", 0) or 0)
+    minutes = total - (utcnow() - STARTED).total_seconds() / 60
+    if minutes > 1:
+        listen(s, minutes)
     return 0
+
+
+def listen(s, minutes: float) -> None:
+    """Слухає бота заданий час: кнопки й відповіді координаторки обробляються за секунди.
+
+    GitHub запускає процес за розкладом нерегулярно (буває раз на годину й рідше),
+    тож без цього координаторка чекала б на реакцію бота до години.
+    """
+    deadline = utcnow() + timedelta(minutes=minutes)
+    log.info("Слухаю бота %.0f хв", minutes)
+    handled = 0
+    while utcnow() < deadline:
+        db = DB(s.db_path)
+        try:
+            wait = int(max(1, min(25, (deadline - utcnow()).total_seconds())))
+            n = approval.process_updates(s, db, wait=wait)
+            if n:
+                handled += n
+                approval.send_pending(s, db)  # нова версія після редагування
+                publisher.run_queue(s, db)
+        except Exception:  # noqa: BLE001 – збій мережі не має зупиняти прослуховування
+            log.exception("Помилка під час прослуховування бота")
+        finally:
+            db.close()
+    log.info("Прослуховування завершено, оновлень: %d", handled)
 
 
 def cmd_digest(args) -> int:
@@ -118,6 +150,8 @@ def main(argv=None) -> int:
     sub.add_parser("approvals").set_defaults(fn=cmd_approvals)
     t = sub.add_parser("tick")
     t.add_argument("--collect-now", action="store_true", help="зібрати новини зараз, не чекаючи розкладу")
+    t.add_argument("--listen-minutes", type=float, default=0,
+                   help="працювати стільки хвилин загалом: після збору слухати бота й реагувати на кнопки одразу")
     t.set_defaults(fn=cmd_tick)
     d = sub.add_parser("digest")
     d.add_argument("--force", action="store_true", help="надіслати зараз, незалежно від часу")
