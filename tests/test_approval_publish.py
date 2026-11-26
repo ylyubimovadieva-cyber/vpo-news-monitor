@@ -233,7 +233,7 @@ def test_expire_after_48h(cfg, db):
 
 
 def test_daily_limits(cfg, db):
-    s = make_settings(cfg, dry_run=False, live_confirmed=True)
+    s = make_settings(cfg, dry_run=False, live_confirmed=True, facebook_token="fb")
     now = iso(utcnow())
     for n in range(5):
         _draft(db, cluster=10 + n, status="approved", target="tgfb", tg_status="queued", fb_status="queued", decided_at=now)
@@ -267,7 +267,7 @@ def test_listen_reacts_to_button_immediately(cfg, db, monkeypatch, tmp_path):
 
 def test_consecutive_approvals_published_an_hour_apart(cfg, db):
     cfg["telegram"]["min_interval_minutes"] = 60
-    s = make_settings(cfg, dry_run=False, live_confirmed=True)
+    s = make_settings(cfg, dry_run=False, live_confirmed=True, facebook_token="fb")
     now = iso(utcnow())
     a = _draft(db, cluster=1, status="approved", target="tgfb", tg_status="queued", fb_status="queued", decided_at=now)
     b = _draft(db, cluster=2, pillar="DIM", status="approved", target="tgfb", tg_status="queued", fb_status="queued", decided_at=now)
@@ -302,3 +302,17 @@ def test_live_hides_buttons_without_tokens(cfg, db):
     assert labels == ["Опублікувати в Telegram", "Редагувати", "Відхилити"]
     s2 = make_settings(cfg, dry_run=False, live_confirmed=True, facebook_token="x")
     assert s2.facebook_button and not s2.linkedin_button
+
+
+def test_approved_in_test_mode_goes_live_and_skips_facebook_without_token(cfg, db):
+    """Погоджене «Telegram і Facebook» у тесті, що чекало на Facebook, після запуску йде в основну групу."""
+    now = iso(utcnow())
+    d = _draft(db, status="approved", target="tgfb", tg_status="dry_published", tg_published_at=now,
+               fb_status="queued", decided_at=now)
+    s = make_settings(cfg, dry_run=False, live_confirmed=True)  # токена Facebook немає
+    pub, fb = FakeTelegram(), FakeFacebook()
+    publisher.run_queue(s, db, tg_api=pub, fb_api=fb, notify_api=FakeTelegram())
+    r = db.get_draft(d)
+    assert pub.sent and pub.sent[0]["chat_id"] == -100500 and not pub.sent[0]["text"].startswith("[ТЕСТ]")
+    assert r["tg_status"] == "published" and r["fb_status"] == "none" and r["status"] == "published"
+    assert fb.posts == []

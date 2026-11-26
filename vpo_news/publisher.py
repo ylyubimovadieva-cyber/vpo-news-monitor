@@ -109,6 +109,12 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
             db.update_draft(d["id"], status="expired", error="дедлайн можливості минув до публікації")
             _notify(s, notify_api, f"Допис №{d['id']} не опубліковано: дедлайн {d['deadline']} уже минув.")
             continue
+        # Погоджений ще в тестовому режимі, але не завершений допис (наприклад, чекав на
+        # Facebook): після переходу в бойовий режим публікуємо його в основній групі.
+        if live and d["tg_status"] == "dry_published":
+            log.info("Допис №%s погоджено в тестовому режимі – ставлю в чергу основної групи", d["id"])
+            db.update_draft(d["id"], tg_status="queued", tg_published_at=None, tg_message_id=None)
+            d = db.get_draft(d["id"])
         # ---- Telegram
         if d["tg_status"] == "queued":
             if _count_today(db, "tg_status", "tg_published_at", d["pillar"], live) >= tg_limit:
@@ -133,7 +139,10 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
         # Facebook і LinkedIn – разом із Telegram-дописом, а не раніше за нього (інтервал).
         tg_out = d["tg_status"] in PUBLISHED + ("failed",)
         if d["fb_status"] == "queued" and d["target"] in ("tgfb", "all") and tg_out:
-            if not s.facebook_enabled:
+            if not s.facebook_button:
+                # Facebook вимкнено або в бойовому режимі немає токена – допис не чекає на нього.
+                if s.facebook_enabled:
+                    log.info("Допис №%s: токена Facebook немає, публікація на Facebook пропущена", d["id"])
                 db.update_draft(d["id"], fb_status="none")
             elif _count_today(db, "fb_status", "fb_published_at", live=live) >= fb_limit:
                 stats["deferred"] += 1
@@ -157,7 +166,7 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
 
         # ---- LinkedIn (лише якщо координаторка обрала кнопку з LinkedIn)
         if d["li_status"] == "queued" and d["target"] == "all" and tg_out:
-            if not s.linkedin_enabled:
+            if not s.linkedin_button:
                 db.update_draft(d["id"], li_status="none")
             elif _count_today(db, "li_status", "li_published_at", live=live) >= li_limit:
                 stats["deferred"] += 1
