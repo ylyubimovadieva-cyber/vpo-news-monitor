@@ -5,7 +5,12 @@ name: monitor
 on:
   schedule:
     - cron: "*/10 * * * *"   # кожні 10 хвилин
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      collect_now:
+        description: "Зібрати новини зараз, не чекаючи розкладу"
+        type: boolean
+        default: false
 
 # Усі процеси працюють з однією базою – не запускаємо їх одночасно.
 concurrency:
@@ -61,7 +66,7 @@ jobs:
         run: bash scripts/state.sh pull
       - id: tick
         if: steps.ready.outputs.ok == 'true'
-        run: python -m vpo_news tick
+        run: python -m vpo_news tick ${{ inputs.collect_now && '--collect-now' || '' }}
       - name: Зберегти стан
         if: always() && steps.ready.outputs.ok == 'true'
         run: bash scripts/state.sh push
