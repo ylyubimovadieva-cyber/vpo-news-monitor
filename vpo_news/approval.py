@@ -79,7 +79,7 @@ def send_pending(s: Settings, db: DB, api: TelegramAPI | None = None) -> int:
         d = db.get_draft(d["id"])
         try:
             msg = api.send_message(s.coordinator_chat_id, render(s, d),
-                                   reply_markup=keyboard(d["id"], s.facebook_enabled, s.linkedin_enabled),
+                                   reply_markup=keyboard(d["id"], s.facebook_button, s.linkedin_button),
                                    disable_preview=True)
         except TelegramError as exc:
             log.warning("Не вдалося надіслати чернетку %s: %s", d["id"], exc.code)
@@ -117,10 +117,10 @@ def _handle_callback(s: Settings, db: DB, api: TelegramAPI, cq: dict) -> None:
 
     now = iso(utcnow())
     if action in ("tg", "tgfb", "all"):
-        if action in ("tgfb", "all") and not s.facebook_enabled:
+        if action in ("tgfb", "all") and not s.facebook_button:
             api.answer_callback(cq["id"], "Публікацію на Facebook вимкнено")
             return
-        if action == "all" and not s.linkedin_enabled:
+        if action == "all" and not s.linkedin_button:
             api.answer_callback(cq["id"], "Публікацію в LinkedIn вимкнено")
             return
         db.update_draft(d["id"], status="approved", target=action, decided_at=now, tg_status="queued",
@@ -179,7 +179,7 @@ def _handle_text(s: Settings, db: DB, api: TelegramAPI, msg: dict) -> None:
     db.set_meta("editing_draft", None)
     d = db.get_draft(d["id"])
     sent = api.send_message(s.coordinator_chat_id, render(s, d),
-                            reply_markup=keyboard(d["id"], s.facebook_enabled, s.linkedin_enabled),
+                            reply_markup=keyboard(d["id"], s.facebook_button, s.linkedin_button),
                             disable_preview=True)
     db.update_draft(d["id"], approval_message_id=sent["message_id"])
     if old_message:

@@ -13,6 +13,8 @@ from .db import DB
 from .facebook import FacebookAPI, FacebookError
 from .linkedin import LinkedInAPI, LinkedInError
 from .telegram import TelegramAPI, TelegramError
+from datetime import timedelta
+
 from .util import iso, kyiv_date, parse_iso, utcnow
 
 log = logging.getLogger(__name__)
@@ -20,11 +22,21 @@ log = logging.getLogger(__name__)
 PUBLISHED = ("published", "dry_published")
 
 
-def _count_today(db: DB, column_status: str, column_at: str, pillar: str | None = None) -> int:
+def _statuses(live: bool) -> str:
+    # У бойовому режимі тестові публікації не рахуються ні в ліміти, ні в інтервал.
+    return "('published')" if live else "('published','dry_published')"
+
+
+def _count_today(db: DB, column_status: str, column_at: str, pillar: str | None = None, live: bool = False) -> int:
     today = kyiv_date()
-    sql = f"SELECT {column_at} AS at, pillar FROM drafts WHERE {column_status} IN ('published','dry_published')"
+    sql = f"SELECT {column_at} AS at, pillar FROM drafts WHERE {column_status} IN {_statuses(live)}"
     rows = db.query(sql)
     return sum(1 for r in rows if r["at"] and kyiv_date(parse_iso(r["at"])) == today and (pillar is None or r["pillar"] == pillar))
+
+
+def _last_tg_publication(db: DB, live: bool):
+    row = db.query(f"SELECT MAX(tg_published_at) AS at FROM drafts WHERE tg_status IN {_statuses(live)}")
+    return parse_iso(row[0]["at"]) if row and row[0]["at"] else None
 
 
 def _notify(s: Settings, notify_api: TelegramAPI | None, text: str) -> None:
@@ -85,6 +97,10 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
     if li_api is None and mode == "live" and s.linkedin_enabled and s.linkedin_token and li_cfg.get("organization_id"):
         li_api = LinkedInAPI(str(li_cfg["organization_id"]), s.linkedin_token, li_cfg.get("api_version", "202510"))
     tag = "" if mode == "live" else "[DRY_RUN] "
+    live = mode == "live"
+    # Кілька погоджених підряд виходять не разом, а з інтервалом (за замовчуванням година).
+    interval = timedelta(minutes=float(s.cfg.get("telegram", {}).get("min_interval_minutes", 60)))
+    last_tg = _last_tg_publication(db, live)
 
     queue = sorted(db.drafts_by_status("approved"), key=lambda d: d["decided_at"] or "")
     for d in queue:
@@ -95,14 +111,17 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
             continue
         # ---- Telegram
         if d["tg_status"] == "queued":
-            if _count_today(db, "tg_status", "tg_published_at", d["pillar"]) >= tg_limit:
+            if _count_today(db, "tg_status", "tg_published_at", d["pillar"], live) >= tg_limit:
                 stats["deferred"] += 1
+            elif last_tg and interval and utcnow() - last_tg < interval:
+                stats["deferred"] += 1  # чекає, поки мине інтервал від попереднього допису
             elif mode != "log" and tg_api is None:
                 log.warning("Немає токена бота для публікації – допис №%s чекає", d["id"])
             else:
                 try:
                     status, mid = _publish_telegram(s, tg_api, d)
                     db.update_draft(d["id"], tg_status=status, tg_message_id=mid, tg_published_at=iso(utcnow()))
+                    last_tg = utcnow()
                     stats["tg"] += 1
                     _notify(s, notify_api, f"{tag}Допис №{d['id']} опубліковано в Telegram (тема {s.pillars[d['pillar']]['topic_name']}).")
                 except TelegramError as exc:
@@ -111,10 +130,12 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
         d = db.get_draft(d["id"])
 
         # ---- Facebook (лише якщо координаторка обрала кнопку з Facebook)
-        if d["fb_status"] == "queued" and d["target"] in ("tgfb", "all"):
+        # Facebook і LinkedIn – разом із Telegram-дописом, а не раніше за нього (інтервал).
+        tg_out = d["tg_status"] in PUBLISHED + ("failed",)
+        if d["fb_status"] == "queued" and d["target"] in ("tgfb", "all") and tg_out:
             if not s.facebook_enabled:
                 db.update_draft(d["id"], fb_status="none")
-            elif _count_today(db, "fb_status", "fb_published_at") >= fb_limit:
+            elif _count_today(db, "fb_status", "fb_published_at", live=live) >= fb_limit:
                 stats["deferred"] += 1
             elif mode == "live" and fb_api is None:
                 log.warning("Не задано FACEBOOK_PAGE_TOKEN або facebook.page_id – допис №%s чекає", d["id"])
@@ -135,10 +156,10 @@ def run_queue(s: Settings, db: DB, tg_api: TelegramAPI | None = None, fb_api: Fa
         d = db.get_draft(d["id"])
 
         # ---- LinkedIn (лише якщо координаторка обрала кнопку з LinkedIn)
-        if d["li_status"] == "queued" and d["target"] == "all":
+        if d["li_status"] == "queued" and d["target"] == "all" and tg_out:
             if not s.linkedin_enabled:
                 db.update_draft(d["id"], li_status="none")
-            elif _count_today(db, "li_status", "li_published_at") >= li_limit:
+            elif _count_today(db, "li_status", "li_published_at", live=live) >= li_limit:
                 stats["deferred"] += 1
             elif mode == "live" and li_api is None:
                 log.warning("Не задано LINKEDIN_ACCESS_TOKEN або linkedin.organization_id – допис №%s чекає", d["id"])

@@ -78,6 +78,16 @@ class Settings:
     def linkedin_enabled(self) -> bool:
         return bool(self.cfg.get("linkedin", {}).get("enabled", False))
 
+    # Кнопки з Facebook / LinkedIn: у бойовому режимі – лише коли є токен, інакше
+    # погоджений допис чекав би на публікацію, яка ніколи не відбудеться.
+    @property
+    def facebook_button(self) -> bool:
+        return self.facebook_enabled and (not self.live or bool(self.facebook_token))
+
+    @property
+    def linkedin_button(self) -> bool:
+        return self.facebook_button and self.linkedin_enabled and (not self.live or bool(self.linkedin_token))
+
 
 def load_config(path: Path | str | None = None) -> dict:
     path = Path(path or os.environ.get("VPO_CONFIG") or ROOT / "config.yaml")

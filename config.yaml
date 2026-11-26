@@ -392,6 +392,7 @@ telegram:
     PAMIAT: 6
     MOZHLYVOSTI: 7
   daily_limit_per_topic: 3
+  min_interval_minutes: 60        # мінімум хвилин між дописами в групі: погоджені підряд виходять по черзі
 
 facebook:
   enabled: true                # false – кнопка Facebook зникає, на Facebook нічого не йде

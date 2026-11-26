@@ -23,6 +23,7 @@ def cfg():
     c["telegram"]["group_chat_id"] = -100500
     c["telegram"]["topics"] = {"DIM": 2, "HOLOS": 3, "TURBOTA": 4, "POVERNENNIA": 5, "PAMIAT": 6}
     c["facebook"]["page_id"] = "123"
+    c["telegram"]["min_interval_minutes"] = 0  # інтервал перевіряє окремий тест
     c["collector"]["request_delay_seconds"] = 0
     return c
 

@@ -58,7 +58,7 @@ class FakeLinkedIn:
 
 
 def test_approve_all_posts_everywhere_live(cfg, db):
-    s = make_settings(cfg, dry_run=False, live_confirmed=True)
+    s = make_settings(cfg, dry_run=False, live_confirmed=True, facebook_token="fb", linkedin_token="li")
     did = _draft(db)
     api = FakeTelegram()
     approval.send_pending(s, db, api)
@@ -157,7 +157,7 @@ def test_approve_tg_only_and_publish_to_topic_live(cfg, db):
 
 
 def test_approve_tgfb_posts_facebook_with_link(cfg, db):
-    s = make_settings(cfg, dry_run=False, live_confirmed=True)
+    s = make_settings(cfg, dry_run=False, live_confirmed=True, facebook_token="fb")
     did = _draft(db)
     api = FakeTelegram()
     approval.send_pending(s, db, api)
@@ -263,3 +263,42 @@ def test_listen_reacts_to_button_immediately(cfg, db, monkeypatch, tmp_path):
     cli.listen(s, minutes=0.02)
     assert db.get_draft(did)["tg_status"] == "dry_published"
     assert pub.sent and pub.sent[0]["chat_id"] == -200
+
+
+def test_consecutive_approvals_published_an_hour_apart(cfg, db):
+    cfg["telegram"]["min_interval_minutes"] = 60
+    s = make_settings(cfg, dry_run=False, live_confirmed=True)
+    now = iso(utcnow())
+    a = _draft(db, cluster=1, status="approved", target="tgfb", tg_status="queued", fb_status="queued", decided_at=now)
+    b = _draft(db, cluster=2, pillar="DIM", status="approved", target="tgfb", tg_status="queued", fb_status="queued", decided_at=now)
+    pub, fb = FakeTelegram(), FakeFacebook()
+    stats = publisher.run_queue(s, db, tg_api=pub, fb_api=fb, notify_api=FakeTelegram())
+    assert stats["tg"] == 1 and len(pub.sent) == 1 and len(fb.posts) == 1  # другий чекає разом із Facebook
+    assert db.get_draft(b)["tg_status"] == "queued" and db.get_draft(b)["fb_status"] == "queued"
+    # минула година – виходить другий
+    db.update_draft(a, tg_published_at=iso(utcnow() - timedelta(minutes=61)))
+    publisher.run_queue(s, db, tg_api=pub, fb_api=fb, notify_api=FakeTelegram())
+    assert len(pub.sent) == 2 and db.get_draft(b)["tg_status"] == "published"
+
+
+def test_test_posts_do_not_count_after_going_live(cfg, db):
+    cfg["telegram"]["min_interval_minutes"] = 60
+    now = iso(utcnow())
+    for n in range(3):  # три тестові публікації сьогодні в одній темі
+        _draft(db, cluster=10 + n, status="published", tg_status="dry_published", tg_published_at=now, decided_at=now)
+    s = make_settings(cfg, dry_run=False, live_confirmed=True)
+    d = _draft(db, cluster=20, status="approved", target="tg", tg_status="queued", decided_at=now)
+    pub = FakeTelegram()
+    publisher.run_queue(s, db, tg_api=pub, notify_api=FakeTelegram())
+    assert db.get_draft(d)["tg_status"] == "published"  # ні ліміт, ні інтервал тест не з'їли
+
+
+def test_live_hides_buttons_without_tokens(cfg, db):
+    s = make_settings(cfg, dry_run=False, live_confirmed=True)  # токенів Facebook і LinkedIn немає
+    _draft(db)
+    api = FakeTelegram()
+    approval.send_pending(s, db, api)
+    labels = [b["text"] for row in api.sent[0]["reply_markup"]["inline_keyboard"] for b in row]
+    assert labels == ["Опублікувати в Telegram", "Редагувати", "Відхилити"]
+    s2 = make_settings(cfg, dry_run=False, live_confirmed=True, facebook_token="x")
+    assert s2.facebook_button and not s2.linkedin_button

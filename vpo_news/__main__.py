@@ -103,6 +103,8 @@ def listen(s, minutes: float) -> None:
             if n:
                 handled += n
                 approval.send_pending(s, db)  # нова версія після редагування
+            # Черга: щойно погоджене і те, що чекало, поки мине годинний інтервал.
+            if db.drafts_by_status("approved"):
                 publisher.run_queue(s, db)
         except Exception:  # noqa: BLE001 – збій мережі не має зупиняти прослуховування
             log.exception("Помилка під час прослуховування бота")
