@@ -75,3 +75,11 @@ def test_similar_titles_cluster():
     assert dedupe.title_similarity(a, b) > dedupe.title_similarity(a, c)
     assert dedupe.event_similarity(a, "", b, "") >= 0.25
     assert dedupe.event_similarity(a, "", c, "") < 0.25
+
+
+def test_blocked_attribution_whole_words_only(cfg):
+    assert verify.has_blocked_attribution("громади: Шахтарську, Українську", cfg) is None
+    assert verify.has_blocked_attribution("Майтарс і Тассо", cfg) is None
+    assert verify.has_blocked_attribution("як повідомляє ТАСС, ...", cfg) == "ТАСС"
+    assert verify.has_blocked_attribution("пише ТАРС.", cfg) == "ТАРС"
+    assert verify.has_blocked_attribution("за даними російських ЗМІ", cfg)

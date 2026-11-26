@@ -39,7 +39,8 @@ def classify_domain(domain: str, cfg: dict) -> SourceInfo | None:
 
 def has_blocked_attribution(text: str, cfg: dict) -> str | None:
     for pat in cfg.get("blocked_attribution_patterns", []):
-        if re.search(pat, text or "", re.IGNORECASE):
+        # Лише цілі слова: «ТАРС» не має спрацьовувати на «Шахтарську».
+        if re.search(rf"(?<!\w)(?:{pat})(?!\w)", text or "", re.IGNORECASE):
             return pat
     return None
 
