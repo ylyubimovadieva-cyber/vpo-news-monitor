@@ -64,6 +64,9 @@ jobs:
       - if: steps.ready.outputs.ok == 'true'
         run: pip install -r requirements.txt
       - if: steps.ready.outputs.ok == 'true'
+        # шрифт із кирилицею для карток платформи до дописів
+        run: fc-list | grep -qi dejavusans || (sudo apt-get update -qq && sudo apt-get install -y -qq fonts-dejavu-core)
+      - if: steps.ready.outputs.ok == 'true'
         run: bash scripts/state.sh pull
       - id: tick
         if: steps.ready.outputs.ok == 'true'

@@ -124,7 +124,8 @@ class Classifier:
         self.client = client or anthropic.Anthropic()  # ключ – зі змінної ANTHROPIC_API_KEY
         self.system = build_system_prompt(cfg)
 
-    def _call(self, user: str, schema: dict) -> dict:
+    def _call(self, user, schema: dict) -> dict:
+        """user – текст або список блоків (наприклад, зображення + текст)."""
         params = dict(
             model=self.model,
             max_tokens=self.max_tokens,
@@ -160,6 +161,15 @@ class Classifier:
 
     def classify(self, rep, others, body_range: tuple[int, int]) -> dict:
         return self._call(build_user_prompt(rep, others, body_range), CLASSIFY_SCHEMA)
+
+    def review_image(self, data: bytes, mime: str, title: str, domain: str) -> dict:
+        """Перевірка зображення з першоджерела: обличчя, персональні дані, авторське право."""
+        from .images import IMAGE_RULES, VISION_SCHEMA, b64
+        content = [
+            {"type": "image", "source": {"type": "base64", "media_type": mime, "data": b64(data)}},
+            {"type": "text", "text": f"{IMAGE_RULES}\n\nНовина: «{title}» (джерело: {domain}). Чи можна використати це зображення?"},
+        ]
+        return self._call(content, VISION_SCHEMA)
 
     def rewrite(self, rep, body: str, errors: list[str], body_range: tuple[int, int]) -> str:
         lo, hi = body_range

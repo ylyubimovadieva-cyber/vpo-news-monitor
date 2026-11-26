@@ -74,6 +74,13 @@ class FakeTelegram:
                           "thread": message_thread_id, "message_id": self._mid})
         return {"message_id": self._mid}
 
+    def send_photo(self, chat_id, photo, caption=None, message_thread_id=None):
+        self._mid += 1
+        self.photos = getattr(self, "photos", [])
+        self.photos.append({"chat_id": chat_id, "caption": caption, "thread": message_thread_id,
+                            "size": len(photo), "message_id": self._mid})
+        return {"message_id": self._mid}
+
     def edit_message_text(self, chat_id, message_id, text, reply_markup=None):
         self.edited.append({"chat_id": chat_id, "message_id": message_id, "text": text})
         return {}
@@ -92,6 +99,7 @@ class FakeFacebook:
     def __init__(self):
         self.posts = []
 
-    def post(self, message, link):
+    def post(self, message, link, photo=None):
         self.posts.append((message, link))
+        self.photos = getattr(self, "photos", []) + ([len(photo)] if photo else [])
         return f"123_{len(self.posts)}"

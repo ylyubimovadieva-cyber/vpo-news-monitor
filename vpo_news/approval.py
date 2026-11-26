@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
-from . import text_rules
+from . import images, text_rules
 from .config import Settings
 from .db import DB, basis, warnings_of
 from .telegram import TelegramAPI, TelegramError
@@ -45,6 +45,8 @@ def render(s: Settings, d, footer: str | None = None) -> str:
     if d["deadline"]:
         lines.append(f"Дедлайн можливості: {d['deadline'][8:10]}.{d['deadline'][5:7]}.{d['deadline'][:4]}")
     lines.append(f"Впевненість моделі: {d['confidence']:.2f}".replace(".", ","))
+    if "image_note" in d.keys() and d["image_note"]:
+        lines.append(f"Зображення (надіслано вище): {d['image_note']}")
     if d["sent_at"]:
         deadline = parse_iso(d["sent_at"]) + timedelta(hours=float(s.cfg.get("approval", {}).get("expire_hours", 48)))
         lines.append(f"Погодити до: {fmt_kyiv(deadline)} (Київ)")
@@ -77,6 +79,7 @@ def send_pending(s: Settings, db: DB, api: TelegramAPI | None = None) -> int:
     for d in db.drafts_by_status("to_send"):
         db.update_draft(d["id"], sent_at=iso(utcnow()))
         d = db.get_draft(d["id"])
+        _send_image(s, api, d)
         try:
             msg = api.send_message(s.coordinator_chat_id, render(s, d),
                                    reply_markup=keyboard(d["id"], s.facebook_button, s.linkedin_button),
@@ -88,6 +91,19 @@ def send_pending(s: Settings, db: DB, api: TelegramAPI | None = None) -> int:
         db.update_draft(d["id"], status="awaiting", approval_message_id=msg["message_id"])
         n += 1
     return n
+
+
+def _send_image(s: Settings, api: TelegramAPI, d) -> None:
+    """Зображення чернетки – окремим повідомленням перед текстом, щоб перевірити все разом."""
+    if not ("image_kind" in d.keys() and d["image_kind"]):
+        return
+    data = images.image_bytes(d, s.cfg)
+    if not data:
+        return
+    try:
+        api.send_photo(s.coordinator_chat_id, data, caption=f"Зображення до чернетки №{d['id']}")
+    except TelegramError as exc:
+        log.info("Не вдалося надіслати зображення чернетки %s: %s", d["id"], exc.code)
 
 
 def _close_message(s: Settings, api: TelegramAPI, d, footer: str) -> None:

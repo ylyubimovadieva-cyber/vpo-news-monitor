@@ -390,14 +390,19 @@ def _source_info(source: dict, domain: str, cfg: dict) -> verify.SourceInfo | No
     return verify.classify_domain(domain, cfg)
 
 
-def fetch_article(fetcher: Fetcher, url: str) -> tuple[str, datetime | None, str, str] | None:
-    """Повертає (заголовок, дата, текст, кінцевий URL) або None."""
+def fetch_article(fetcher: Fetcher, url: str) -> tuple[str, datetime | None, str, str, str | None] | None:
+    """Повертає (заголовок, дата, текст, кінцевий URL, зображення og:image) або None."""
     r = fetcher.get(url)
     if r is None or "html" not in r.headers.get("content-type", "html"):
         return None
     p = PageParser()
     p.feed(r.text)
-    return p.headline(), p.published(), p.text(), str(r.url)
+    image = p.meta.get("og:image") or p.meta.get("twitter:image")
+    if image:
+        image = urljoin(str(r.url), image.strip())
+        if not image.startswith("https://"):
+            image = None
+    return p.headline(), p.published(), p.text(), str(r.url), image
 
 
 def _matches_any(text: str, patterns) -> bool:
@@ -475,10 +480,11 @@ def collect(cfg: dict, db: DB, fetcher: Fetcher | None = None) -> dict:
                 stats["new"] += 1
                 continue
 
+            image_url = None
             if (need_page or want_body) and not c.get("no_fetch"):
                 art = fetch_article(fetcher, url)
                 if art:
-                    a_title, a_pub, a_text, final_url = art
+                    a_title, a_pub, a_text, final_url, a_image = art
                     # Після переадресації домен має лишатися в білому списку.
                     if domain_of(final_url) != domain and verify.classify_domain(domain_of(final_url), cfg) is None:
                         stats["skipped_domain"] += 1
@@ -486,6 +492,7 @@ def collect(cfg: dict, db: DB, fetcher: Fetcher | None = None) -> dict:
                     title = title or a_title
                     published = published or a_pub
                     body = a_text
+                    image_url = a_image
             if not title or published is None:
                 continue  # без дати не можемо перевірити свіжість – пропускаємо
             if older_than(published, max_age):
@@ -502,7 +509,7 @@ def collect(cfg: dict, db: DB, fetcher: Fetcher | None = None) -> dict:
             db.insert_item(url=url, url_norm=url_norm, title=title, title_key=dedupe.title_key(title),
                            source_name=source["name"], domain=domain, kind=info.kind, owner=info.owner,
                            published_at=iso(published), summary=summary[:1000], body=body or None,
-                           status=status, reason=reason)
+                           status=status, reason=reason, image_url=image_url)
             stats["new"] += 1
             if status == "new":
                 stats["candidates"] += 1

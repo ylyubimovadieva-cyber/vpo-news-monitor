@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS items (
     status        TEXT NOT NULL DEFAULT 'new',
     status_at     TEXT NOT NULL,
     reason        TEXT,
-    cluster_id    INTEGER
+    cluster_id    INTEGER,
+    image_url     TEXT                        -- og:image сторінки першоджерела
 );
 CREATE INDEX IF NOT EXISTS idx_items_status ON items(status);
 CREATE INDEX IF NOT EXISTS idx_items_cluster ON items(cluster_id);
@@ -67,6 +68,9 @@ CREATE TABLE IF NOT EXISTS drafts (
     li_status           TEXT NOT NULL DEFAULT 'none',
     li_published_at     TEXT,
     li_post_id          TEXT,
+    image_kind          TEXT,                 -- source (з першоджерела) | card (картка платформи) | NULL
+    image_url           TEXT,
+    image_note          TEXT,                 -- звідки зображення і результат перевірки
     error               TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_drafts_status ON drafts(status);
@@ -79,7 +83,7 @@ CREATE TABLE IF NOT EXISTS meta (
 
 ITEM_FIELDS = (
     "url", "url_norm", "title", "title_key", "source_name", "domain", "kind", "owner",
-    "published_at", "summary", "body", "status", "reason",
+    "published_at", "summary", "body", "status", "reason", "image_url",
 )
 
 
@@ -101,6 +105,12 @@ class DB:
         cols = {r[1] for r in self.conn.execute("PRAGMA table_info(drafts)")}
         if "deadline" not in cols:
             self.conn.execute("ALTER TABLE drafts ADD COLUMN deadline TEXT")
+        for col in ("image_kind", "image_url", "image_note"):
+            if col not in cols:
+                self.conn.execute(f"ALTER TABLE drafts ADD COLUMN {col} TEXT")
+        icols = {r[1] for r in self.conn.execute("PRAGMA table_info(items)")}
+        if "image_url" not in icols:
+            self.conn.execute("ALTER TABLE items ADD COLUMN image_url TEXT")
         if "li_status" not in cols:
             self.conn.execute("ALTER TABLE drafts ADD COLUMN li_status TEXT NOT NULL DEFAULT 'none'")
             self.conn.execute("ALTER TABLE drafts ADD COLUMN li_published_at TEXT")

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from datetime import date, timedelta
 
-from . import dedupe, text_rules, verify
+from . import dedupe, text_rules, verify, images
 from .config import OPPORTUNITY_KEY
 from .db import DB
 from .llm import Classifier, LLMError
@@ -172,6 +172,13 @@ def process_clusters(cfg: dict, db: DB, classifier: Classifier | None) -> dict:
             elif deadline <= kyiv_today() + timedelta(days=OPPORTUNITY_MIN_DAYS_LEFT):
                 reasons.append(f"дедлайн {deadline:%d.%m.%Y} уже минув або надто близько")
         status = "doubtful" if reasons else "to_send"
+        # Зображення – лише для чернеток, що підуть координаторці (перевірка коштує запиту до моделі).
+        image = {}
+        if status == "to_send":
+            try:
+                image = images.choose(cfg, classifier, source_item, pillar, text)
+            except Exception as exc:  # noqa: BLE001 – без зображення чернетка все одно йде на погодження
+                log.warning("Кластер %s: не вдалося підібрати зображення: %s", cid, type(exc).__name__)
 
         db.insert_draft(
             cluster_id=cid, item_id=source_item["id"], pillar=pillar, secondary_pillar=secondary,
@@ -179,6 +186,7 @@ def process_clusters(cfg: dict, db: DB, classifier: Classifier | None) -> dict:
             confidence=float(res["confidence"]), warnings=warnings,
             reason="; ".join(reasons) or res.get("reason"), status=status,
             deadline=deadline.isoformat() if deadline else None,
+            **image,
         )
         for i in items:
             if i["id"] in confirmed_ids:

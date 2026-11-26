@@ -17,12 +17,20 @@ class FacebookAPI:
         self.page_id, self._token, self.version = page_id, token, version
         self._http = client or httpx.Client(timeout=30)
 
-    def post(self, message: str, link: str) -> str:
+    def post(self, message: str, link: str, photo: bytes | None = None) -> str:
+        """Допис на сторінці; з фото – через /photos (посилання лишається в тексті)."""
         try:
-            r = self._http.post(
-                f"https://graph.facebook.com/{self.version}/{self.page_id}/feed",
-                data={"message": message, "link": link, "access_token": self._token},
-            )
+            if photo:
+                r = self._http.post(
+                    f"https://graph.facebook.com/{self.version}/{self.page_id}/photos",
+                    data={"message": message, "access_token": self._token},
+                    files={"source": ("image.png", photo)}, timeout=60,
+                )
+            else:
+                r = self._http.post(
+                    f"https://graph.facebook.com/{self.version}/{self.page_id}/feed",
+                    data={"message": message, "link": link, "access_token": self._token},
+                )
         except httpx.HTTPError as exc:
             raise FacebookError(None, type(exc).__name__) from None
         data = r.json() if r.content else {}

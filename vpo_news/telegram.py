@@ -51,6 +51,26 @@ class TelegramAPI:
             link_preview_options={"is_disabled": disable_preview},
         )
 
+    def send_photo(self, chat_id, photo: bytes, caption=None, message_thread_id=None):
+        """Фото з підписом (до 1024 символів), завантаження файлом."""
+        data = {"chat_id": str(chat_id)}
+        if caption:
+            data["caption"] = caption
+        if message_thread_id:
+            data["message_thread_id"] = str(message_thread_id)
+        try:
+            r = self._http.post(f"https://api.telegram.org/bot{self._token}/sendPhoto", data=data,
+                                files={"photo": ("image.png", photo)}, timeout=60)
+        except httpx.HTTPError as exc:
+            raise TelegramError("sendPhoto", None, type(exc).__name__) from None
+        try:
+            res = r.json()
+        except ValueError:
+            raise TelegramError("sendPhoto", r.status_code, "некоректна відповідь") from None
+        if not res.get("ok"):
+            raise TelegramError("sendPhoto", res.get("error_code"), res.get("description"))
+        return res["result"]
+
     def edit_message_text(self, chat_id, message_id, text, reply_markup=None):
         return self.call("editMessageText", chat_id=chat_id, message_id=message_id, text=text,
                          reply_markup=reply_markup, link_preview_options={"is_disabled": True})

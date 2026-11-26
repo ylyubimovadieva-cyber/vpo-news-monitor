@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 
+from . import images
 from .config import Settings
 from .db import DB
 from .facebook import FacebookAPI, FacebookError
@@ -47,6 +48,22 @@ def _notify(s: Settings, notify_api: TelegramAPI | None, text: str) -> None:
             pass
 
 
+CAPTION_LIMIT = 1024
+
+
+def _send(s: Settings, api: TelegramAPI, chat, text: str, thread, d) -> int:
+    """Допис із погодженим зображенням (фото з підписом) або, якщо зображення немає, – текстом."""
+    photo = images.image_bytes(d, s.cfg) if ("image_kind" in d.keys() and d["image_kind"]) else None
+    if photo:
+        try:
+            if len(text) <= CAPTION_LIMIT:
+                return api.send_photo(chat, photo, caption=text, message_thread_id=thread)["message_id"]
+            api.send_photo(chat, photo, message_thread_id=thread)
+        except TelegramError as exc:
+            log.warning("Зображення до допису №%s не надіслано (%s) – публікую текст", d["id"], exc.code)
+    return api.send_message(chat, text, message_thread_id=thread)["message_id"]
+
+
 def _publish_telegram(s: Settings, api: TelegramAPI | None, d) -> tuple[str, int | None]:
     tg = s.cfg.get("telegram", {})
     mode = s.publish_mode
@@ -54,12 +71,10 @@ def _publish_telegram(s: Settings, api: TelegramAPI | None, d) -> tuple[str, int
         chat, thread = tg.get("group_chat_id"), (tg.get("topics") or {}).get(d["pillar"])
         if not chat or not thread:
             raise TelegramError("sendMessage", None, "не задано group_chat_id або message_thread_id теми в config.yaml")
-        msg = api.send_message(chat, d["text"], message_thread_id=thread)
-        return "published", msg["message_id"]
+        return "published", _send(s, api, chat, d["text"], thread, d)
     if mode == "test_group":
         thread = (tg.get("test_topics") or {}).get(d["pillar"]) or None
-        msg = api.send_message(s.test_group_chat_id, "[ТЕСТ] " + d["text"], message_thread_id=thread)
-        return "dry_published", msg["message_id"]
+        return "dry_published", _send(s, api, s.test_group_chat_id, "[ТЕСТ] " + d["text"], thread, d)
     log.info("[DRY_RUN] Допис №%s (стовп %s, %d симв.) було б опубліковано в Telegram", d["id"], d["pillar"], len(d["text"]))
     return "dry_published", None
 
@@ -68,7 +83,8 @@ def _publish_facebook(s: Settings, fb: FacebookAPI | None, d) -> tuple[str, str 
     if s.publish_mode != "live":
         log.info("[DRY_RUN] Допис №%s було б опубліковано на Facebook", d["id"])
         return "dry_published", None
-    return "published", fb.post(d["text"], d["source_url"])
+    photo = images.image_bytes(d, s.cfg) if ("image_kind" in d.keys() and d["image_kind"]) else None
+    return "published", fb.post(d["text"], d["source_url"], photo=photo)
 
 
 def _publish_linkedin(s: Settings, li: LinkedInAPI | None, d) -> tuple[str, str | None]:
